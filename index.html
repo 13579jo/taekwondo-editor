@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>自由品勢音樂剪輯器</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, "Microsoft JhengHei", sans-serif;
+      background: #090b12;
+      color: #ffffff;
+    }
+
+    /* ================================
+       01｜剪輯器最上方標題
+       ================================ */
+
+    .header {
+      padding: 35px 20px 25px;
+      text-align: center;
+      background:
+        linear-gradient(135deg, #101522, #1b1235);
+      border-bottom: 1px solid #252a38;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 32px;
+    }
+
+    .header p {
+      margin: 10px 0 0;
+      color: #9ca3b5;
+    }
+
+    /* ================================
+       02｜上方導覽
+       ================================ */
+
+    .nav {
+      max-width: 1100px;
+      margin: 20px auto;
+      padding: 0 15px;
+
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .nav button {
+      min-height: 48px;
+      border: 1px solid #30384c;
+      border-radius: 10px;
+
+      background: #141824;
+      color: white;
+
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    /* ================================
+       03｜剪輯器主要區域
+       ================================ */
+
+    .editor {
+      max-width: 1100px;
+      margin: auto;
+      padding: 15px;
+    }
+
+    /* ================================
+       04｜工具列
+       ================================ */
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+
+      padding: 15px;
+
+      background: #121621;
+      border: 1px solid #252b3b;
+      border-radius: 14px;
+    }
+
+    .tool-button {
+      min-height: 46px;
+      padding: 0 18px;
+
+      border: 0;
+      border-radius: 9px;
+
+      background: #334cff;
+      color: white;
+
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .tool-button.secondary {
+      background: #242a38;
+    }
+
+    /* 真正的檔案選擇器隱藏 */
+    #musicFile {
+      display: none;
+    }
+
+    /* ================================
+       05｜目前音樂資訊
+       ================================ */
+
+    .music-info {
+      margin-top: 15px;
+      padding: 15px;
+
+      background: #121621;
+      border: 1px solid #252b3b;
+      border-radius: 14px;
+    }
+
+    #fileName {
+      color: #aeb6c8;
+    }
+
+    /* ================================
+       06｜時間軸區域
+       ================================ */
+
+    .timeline {
+      margin-top: 15px;
+      padding: 18px;
+
+      min-height: 230px;
+
+      background: #10141e;
+      border: 1px solid #252b3b;
+      border-radius: 14px;
+
+      overflow-x: auto;
+    }
+
+    .timeline-title {
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    .time-ruler {
+      min-width: 900px;
+
+      display: flex;
+      justify-content: space-between;
+
+      color: #7f8799;
+      font-size: 12px;
+
+      border-bottom: 1px solid #343b4d;
+      padding-bottom: 8px;
+    }
+
+    .track {
+      position: relative;
+
+      min-width: 900px;
+      height: 75px;
+
+      margin-top: 15px;
+
+      background: #181e2b;
+      border-radius: 10px;
+    }
+
+    .track-name {
+      position: absolute;
+      left: 10px;
+      top: 8px;
+
+      color: #7f8799;
+      font-size: 12px;
+    }
+
+    #audioClip {
+      display: none;
+
+      position: absolute;
+      left: 10px;
+      top: 30px;
+
+      height: 35px;
+      min-width: 220px;
+
+      padding: 8px 12px;
+
+      border-radius: 7px;
+
+      background:
+        linear-gradient(90deg, #334cff, #7047ff);
+
+      font-size: 13px;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ================================
+       07｜音訊播放器
+       ================================ */
+
+    #audioPlayer {
+      width: 100%;
+      margin-top: 15px;
+      display: none;
+    }
+
+    /* ================================
+       08｜手機版
+       ================================ */
+
+    @media (max-width: 650px) {
+
+      .header h1 {
+        font-size: 25px;
+      }
+
+      .nav {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .tool-button {
+        flex: 1;
+        min-width: 130px;
+      }
+    }
+  </style>
+</head>
+
+
+<body>
+
+  <!-- ================================
+       01｜標題
+       ================================ -->
+
+  <header class="header">
+
+    <h1>✂️ 自由品勢音樂剪輯器</h1>
+
+    <p>
+      音樂剪輯・音效卡點・自由品勢專用
+    </p>
+
+  </header>
+
+
+  <!-- ================================
+       02｜導覽列
+       目前先做畫面，之後再接功能
+       ================================ -->
+
+  <nav class="nav">
+
+    <button>🏠 回主頁</button>
+
+    <button>❤️ 我的最愛</button>
+
+    <button>🎵 我的成品</button>
+
+    <button>📂 工作包</button>
+
+  </nav>
+
+
+  <!-- ================================
+       03｜剪輯器
+       ================================ -->
+
+  <main class="editor">
+
+
+    <!-- ================================
+         04｜剪輯工具
+         ================================ -->
+
+    <section class="toolbar">
+
+      <button
+        class="tool-button"
+        onclick="document.getElementById('musicFile').click()"
+      >
+        📁 加入音樂
+      </button>
+
+
+      <input
+        id="musicFile"
+        type="file"
+        accept="audio/*"
+      >
+
+
+      <button
+        class="tool-button secondary"
+        disabled
+      >
+        ▶ 播放
+      </button>
+
+
+      <button
+        class="tool-button secondary"
+        disabled
+      >
+        ✂️ 分割
+      </button>
+
+
+      <button
+        class="tool-button secondary"
+        disabled
+      >
+        🗑️ 刪除
+      </button>
+
+
+      <button
+        class="tool-button secondary"
+        disabled
+      >
+        ↶ 復原
+      </button>
+
+    </section>
+
+
+    <!-- ================================
+         05｜目前加入的音樂
+         ================================ -->
+
+    <section class="music-info">
+
+      <strong>目前音樂：</strong>
+
+      <span id="fileName">
+        尚未加入音樂
+      </span>
+
+      <audio
+        id="audioPlayer"
+        controls
+      ></audio>
+
+    </section>
+
+
+    <!-- ================================
+         06｜時間軸
+         ================================ -->
+
+    <section class="timeline">
+
+      <div class="timeline-title">
+        🎚️ 時間軸
+      </div>
+
+
+      <div class="time-ruler">
+
+        <span>00:00</span>
+        <span>00:15</span>
+        <span>00:30</span>
+        <span>00:45</span>
+        <span>01:00</span>
+        <span>01:15</span>
+        <span>01:30</span>
+
+      </div>
+
+
+      <div class="track">
+
+        <div class="track-name">
+          音軌 1
+        </div>
+
+
+        <div id="audioClip">
+          音樂
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <script>
+
+    /* ================================
+       01｜取得網頁元件
+       ================================ */
+
+    const musicFile =
+      document.getElementById("musicFile");
+
+    const fileName =
+      document.getElementById("fileName");
+
+    const audioPlayer =
+      document.getElementById("audioPlayer");
+
+    const audioClip =
+      document.getElementById("audioClip");
+
+
+    /* ================================
+       02｜加入本機音樂
+       使用者選擇 MP3 / M4A / WAV 等音訊
+       ================================ */
+
+    musicFile.addEventListener(
+      "change",
+      function () {
+
+        const file = this.files[0];
+
+        if (!file) {
+          return;
+        }
+
+
+        /* 顯示檔案名稱 */
+
+        fileName.textContent =
+          file.name;
+
+
+        /* 建立瀏覽器暫時音訊網址 */
+
+        const audioURL =
+          URL.createObjectURL(file);
+
+
+        /* 放進播放器 */
+
+        audioPlayer.src =
+          audioURL;
+
+        audioPlayer.style.display =
+          "block";
+
+
+        /* 在時間軸顯示音樂片段 */
+
+        audioClip.textContent =
+          "🎵 " + file.name;
+
+        audioClip.style.display =
+          "block";
+
+      }
+    );
+
+  </script>
+
+</body>
+</html>
