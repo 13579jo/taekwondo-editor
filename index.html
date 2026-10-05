@@ -2,482 +2,2959 @@
 <html lang="zh-Hant">
 
 <head>
-  <meta charset="UTF-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+<meta charset="UTF-8">
 
-  <title>自由品勢音樂剪輯器</title>
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<title>自由品勢剪輯器</title>
 
-    body {
-      margin: 0;
-      font-family: Arial, "Microsoft JhengHei", sans-serif;
-      background: #090b12;
-      color: #ffffff;
-    }
+<style>
 
-    /* ================================
-       01｜剪輯器最上方標題
-       ================================ */
+* {
+  box-sizing: border-box;
+}
 
-    .header {
-      padding: 35px 20px 25px;
-      text-align: center;
-      background:
-        linear-gradient(135deg, #101522, #1b1235);
-      border-bottom: 1px solid #252a38;
-    }
+:root {
+  --bg: #101010;
+  --panel: #181818;
+  --panel2: #242424;
+  --line: #363636;
 
-    .header h1 {
-      margin: 0;
-      font-size: 32px;
-    }
+  --text: #ffffff;
+  --sub: #a9a9a9;
 
-    .header p {
-      margin: 10px 0 0;
-      color: #9ca3b5;
-    }
+  --pink: #ff2c68;
+  --purple: #7655e8;
 
-    /* ================================
-       02｜上方導覽
-       ================================ */
+  --music: #079ba8;
+  --splice: #7655e8;
+  --effect: #cf8516;
+}
 
-    .nav {
-      max-width: 1100px;
-      margin: 20px auto;
-      padding: 0 15px;
+body {
+  margin: 0;
 
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-    }
+  background: var(--bg);
+  color: var(--text);
 
-    .nav button {
-      min-height: 48px;
-      border: 1px solid #30384c;
-      border-radius: 10px;
+  font-family:
+    Arial,
+    "Microsoft JhengHei",
+    sans-serif;
 
-      background: #141824;
-      color: white;
+  overflow: hidden;
+}
 
-      font-size: 15px;
-      cursor: pointer;
-    }
+button {
+  font-family: inherit;
+}
 
-    /* ================================
-       03｜剪輯器主要區域
-       ================================ */
 
-    .editor {
-      max-width: 1100px;
-      margin: auto;
-      padding: 15px;
-    }
+/* ========================================
+   最上方
+======================================== */
 
-    /* ================================
-       04｜工具列
-       ================================ */
+.topbar {
 
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+  height: 64px;
 
-      padding: 15px;
+  background: #171717;
 
-      background: #121621;
-      border: 1px solid #252b3b;
-      border-radius: 14px;
-    }
+  border-bottom:
+    1px solid var(--line);
 
-    .tool-button {
-      min-height: 46px;
-      padding: 0 18px;
+  display: flex;
 
-      border: 0;
-      border-radius: 9px;
+  align-items: center;
 
-      background: #334cff;
-      color: white;
+  justify-content:
+    space-between;
 
-      font-size: 15px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+  padding:
+    0 18px;
+}
 
-    .tool-button.secondary {
-      background: #242a38;
-    }
 
-    /* 真正的檔案選擇器隱藏 */
-    #musicFile {
-      display: none;
-    }
+.brand {
 
-    /* ================================
-       05｜目前音樂資訊
-       ================================ */
+  font-size: 20px;
 
-    .music-info {
-      margin-top: 15px;
-      padding: 15px;
+  font-weight: bold;
+}
 
-      background: #121621;
-      border: 1px solid #252b3b;
-      border-radius: 14px;
-    }
 
-    #fileName {
-      color: #aeb6c8;
-    }
+.top-actions {
 
-    /* ================================
-       06｜時間軸區域
-       ================================ */
+  display: flex;
 
-    .timeline {
-      margin-top: 15px;
-      padding: 18px;
+  gap: 8px;
+}
 
-      min-height: 230px;
 
-      background: #10141e;
-      border: 1px solid #252b3b;
-      border-radius: 14px;
+.top-button {
 
-      overflow-x: auto;
-    }
+  border: none;
 
-    .timeline-title {
-      font-weight: bold;
-      margin-bottom: 15px;
-    }
+  border-radius: 9px;
 
-    .time-ruler {
-      min-width: 900px;
+  background: #303030;
 
-      display: flex;
-      justify-content: space-between;
+  color: white;
 
-      color: #7f8799;
-      font-size: 12px;
+  padding:
+    10px 14px;
 
-      border-bottom: 1px solid #343b4d;
-      padding-bottom: 8px;
-    }
+  cursor: pointer;
+}
 
-    .track {
-      position: relative;
 
-      min-width: 900px;
-      height: 75px;
+.finish-button {
 
-      margin-top: 15px;
+  background:
+    var(--pink);
 
-      background: #181e2b;
-      border-radius: 10px;
-    }
+  font-weight: bold;
+}
 
-    .track-name {
-      position: absolute;
-      left: 10px;
-      top: 8px;
 
-      color: #7f8799;
-      font-size: 12px;
-    }
+/* ========================================
+   主畫面
+======================================== */
 
-    #audioClip {
-      display: none;
+.editor {
 
-      position: absolute;
-      left: 10px;
-      top: 30px;
+  height:
+    calc(100vh - 64px);
 
-      height: 35px;
-      min-width: 220px;
+  display: flex;
 
-      padding: 8px 12px;
+  flex-direction: column;
 
-      border-radius: 7px;
+  min-height: 0;
+}
 
-      background:
-        linear-gradient(90deg, #334cff, #7047ff);
 
-      font-size: 13px;
+/* ========================================
+   預覽區
+======================================== */
 
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+.preview {
 
-    /* ================================
-       07｜音訊播放器
-       ================================ */
+  flex: 1;
 
-    #audioPlayer {
-      width: 100%;
-      margin-top: 15px;
-      display: none;
-    }
+  min-height: 90px;
 
-    /* ================================
-       08｜手機版
-       ================================ */
+  background: #0c0c0c;
 
-    @media (max-width: 650px) {
+  display: flex;
 
-      .header h1 {
-        font-size: 25px;
-      }
+  align-items: center;
 
-      .nav {
-        grid-template-columns: repeat(2, 1fr);
-      }
+  justify-content: center;
 
-      .tool-button {
-        flex: 1;
-        min-width: 130px;
-      }
-    }
-  </style>
+  color: #888;
+
+  text-align: center;
+}
+
+
+.preview-icon {
+
+  font-size: 34px;
+
+  margin-bottom: 7px;
+}
+
+
+/* ========================================
+   播放控制
+======================================== */
+
+.playbar {
+
+  height: 54px;
+
+  flex-shrink: 0;
+
+  background: #171717;
+
+  border-top:
+    1px solid #2a2a2a;
+
+  border-bottom:
+    1px solid #2a2a2a;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 22px;
+}
+
+
+.round-button {
+
+  width: 38px;
+
+  height: 38px;
+
+  border-radius: 50%;
+
+  border: none;
+
+  background: #343434;
+
+  color: white;
+
+  cursor: pointer;
+
+  font-size: 16px;
+}
+
+
+.play-button {
+
+  background: white;
+
+  color: black;
+}
+
+
+.time-text {
+
+  color: #bbb;
+
+  font-size: 13px;
+}
+
+
+/* ========================================
+   時間軸
+======================================== */
+
+.timeline {
+
+  height: 230px;
+
+  flex-shrink: 0;
+
+  background: #202020;
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+
+/* 時間刻度 */
+
+.ruler {
+
+  height: 36px;
+
+  padding-left: 30px;
+
+  display: flex;
+
+  align-items: center;
+
+  color: #999;
+
+  font-size: 12px;
+
+  white-space: nowrap;
+
+  border-bottom:
+    1px solid #303030;
+}
+
+
+.ruler span {
+
+  width: 100px;
+
+  flex-shrink: 0;
+}
+
+
+/* 時間軸捲動區 */
+
+.timeline-scroll {
+
+  height: 194px;
+
+  overflow-x: auto;
+
+  overflow-y: hidden;
+
+  padding:
+    28px 26px;
+}
+
+
+.track {
+
+  min-width: 1200px;
+
+  height: 88px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  position: relative;
+}
+
+
+.empty-track {
+
+  color: #777;
+
+  font-size: 14px;
+
+  padding-left: 18px;
+}
+
+
+/* ========================================
+   時間軸片段
+======================================== */
+
+.clip {
+
+  width: 190px;
+
+  height: 66px;
+
+  flex-shrink: 0;
+
+  border-radius: 8px;
+
+  border:
+    2px solid transparent;
+
+  padding: 8px;
+
+  cursor: pointer;
+
+  overflow: hidden;
+
+  position: relative;
+}
+
+
+/* 音樂 */
+
+.clip.music {
+
+  background:
+    repeating-linear-gradient(
+      to right,
+
+      #08a9b7 0px,
+
+      #08a9b7 8px,
+
+      #077984 9px,
+
+      #077984 13px
+    );
+}
+
+
+/* 拼接 */
+
+.clip.splice {
+
+  background:
+    repeating-linear-gradient(
+      to right,
+
+      #7655e8 0px,
+
+      #7655e8 8px,
+
+      #553ca7 9px,
+
+      #553ca7 13px
+    );
+}
+
+
+/* 音效 */
+
+.clip.effect {
+
+  background:
+    repeating-linear-gradient(
+      to right,
+
+      #d78b18 0px,
+
+      #d78b18 8px,
+
+      #a86b10 9px,
+
+      #a86b10 13px
+    );
+}
+
+
+/* 選取中的片段 */
+
+.clip.selected {
+
+  border-color: white;
+
+  box-shadow:
+    0 0 0 2px
+    var(--pink);
+}
+
+
+.clip-title {
+
+  font-size: 13px;
+
+  font-weight: bold;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+}
+
+
+.clip-info {
+
+  font-size: 11px;
+
+  margin-top: 9px;
+
+  opacity: 0.92;
+}
+
+
+/* ========================================
+   中央白色播放頭
+======================================== */
+
+.playhead {
+
+  position: absolute;
+
+  top: 36px;
+
+  bottom: 0;
+
+  left: 50%;
+
+  width: 3px;
+
+  background: white;
+
+  z-index: 20;
+
+  pointer-events: none;
+}
+
+
+.playhead::before {
+
+  content: "";
+
+  position: absolute;
+
+  top: -6px;
+
+  left: -5px;
+
+  width: 13px;
+
+  height: 13px;
+
+  border-radius: 50%;
+
+  background: white;
+}
+
+
+/* ========================================
+   唯一一組素材入口
+======================================== */
+
+.material-buttons {
+
+  height: 70px;
+
+  flex-shrink: 0;
+
+  background: #181818;
+
+  border-top:
+    1px solid #333;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 10px;
+}
+
+
+.material-button {
+
+  min-width: 125px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background: #2b2b2b;
+
+  color: white;
+
+  padding:
+    13px 18px;
+
+  font-size: 15px;
+
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+
+.material-button.active {
+
+  background:
+    #503ab2;
+}
+
+
+/* ========================================
+   編輯工具提示
+======================================== */
+
+.edit-help {
+
+  height: 28px;
+
+  flex-shrink: 0;
+
+  background: #252525;
+
+  text-align: center;
+
+  color: #bbb;
+
+  font-size: 12px;
+
+  padding-top: 7px;
+}
+
+
+/* ========================================
+   兒童友善編輯工具
+======================================== */
+
+.edit-tools {
+
+  height: 110px;
+
+  flex-shrink: 0;
+
+  background: #252525;
+
+  display: flex;
+
+  gap: 8px;
+
+  overflow-x: auto;
+
+  padding:
+    8px 10px 14px;
+}
+
+
+.edit-button {
+
+  min-width: 108px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background: #343434;
+
+  color: white;
+
+  padding: 8px;
+
+  cursor: pointer;
+}
+
+
+.edit-button:disabled {
+
+  opacity: 0.28;
+
+  cursor: default;
+}
+
+
+.edit-icon {
+
+  display: block;
+
+  font-size: 24px;
+}
+
+
+.edit-name {
+
+  display: block;
+
+  margin-top: 5px;
+
+  font-size: 14px;
+
+  font-weight: bold;
+}
+
+
+.edit-desc {
+
+  display: block;
+
+  margin-top: 4px;
+
+  color: #bbb;
+
+  font-size: 10px;
+}
+
+
+/* ========================================
+   素材彈出面板
+======================================== */
+
+.material-sheet {
+
+  position: fixed;
+
+  left: 0;
+
+  right: 0;
+
+  bottom: 208px;
+
+  height: 46vh;
+
+  background: #202020;
+
+  border-top:
+    1px solid #444;
+
+  box-shadow:
+    0 -12px 30px
+    rgba(0,0,0,0.35);
+
+  z-index: 100;
+
+  display: none;
+
+  flex-direction: column;
+}
+
+
+.material-sheet.show {
+
+  display: flex;
+}
+
+
+.sheet-header {
+
+  height: 56px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content:
+    space-between;
+
+  padding:
+    0 16px;
+
+  border-bottom:
+    1px solid #393939;
+}
+
+
+.sheet-title {
+
+  font-size: 18px;
+
+  font-weight: bold;
+}
+
+
+.close-button {
+
+  width: 36px;
+
+  height: 36px;
+
+  border: none;
+
+  border-radius: 50%;
+
+  background: #333;
+
+  color: white;
+
+  font-size: 20px;
+
+  cursor: pointer;
+}
+
+
+/* ========================================
+   搜尋＋上傳
+======================================== */
+
+.sheet-tools {
+
+  padding:
+    10px 14px 0;
+
+  display: flex;
+
+  gap: 8px;
+}
+
+
+.search-box {
+
+  flex: 1;
+
+  border: none;
+
+  outline: none;
+
+  border-radius: 8px;
+
+  background: #303030;
+
+  color: white;
+
+  padding:
+    10px 12px;
+
+  font-size: 14px;
+}
+
+
+.upload-own {
+
+  display: none;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background: #3a3a3a;
+
+  color: white;
+
+  padding:
+    10px 12px;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+}
+
+
+#uploadInput {
+
+  display: none;
+}
+
+
+/* ========================================
+   素材列表
+======================================== */
+
+.material-list {
+
+  flex: 1;
+
+  overflow-y: auto;
+
+  padding:
+    10px 14px 20px;
+}
+
+
+.material-row {
+
+  min-height: 68px;
+
+  background: #2b2b2b;
+
+  border-radius: 10px;
+
+  margin-bottom: 8px;
+
+  padding: 10px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+
+.mark-button {
+
+  width: 42px;
+
+  border: none;
+
+  background: transparent;
+
+  color: white;
+
+  font-size: 22px;
+
+  cursor: pointer;
+}
+
+
+.material-info {
+
+  flex: 1;
+
+  min-width: 0;
+}
+
+
+.material-name {
+
+  font-weight: bold;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+}
+
+
+.material-small {
+
+  font-size: 11px;
+
+  color: #aaa;
+
+  margin-top: 5px;
+}
+
+
+.use-button {
+
+  border: none;
+
+  border-radius: 8px;
+
+  background:
+    var(--pink);
+
+  color: white;
+
+  padding:
+    9px 15px;
+
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+
+/* ========================================
+   小提示
+======================================== */
+
+.toast {
+
+  position: fixed;
+
+  left: 50%;
+
+  bottom: 224px;
+
+  transform:
+    translateX(-50%);
+
+  background:
+    rgba(0,0,0,0.9);
+
+  color: white;
+
+  padding:
+    11px 20px;
+
+  border-radius: 22px;
+
+  z-index: 999;
+
+  display: none;
+
+  font-size: 14px;
+}
+
+
+/* ========================================
+   手機
+======================================== */
+
+@media (max-width: 700px) {
+
+  .brand {
+
+    font-size: 16px;
+  }
+
+  .top-button {
+
+    padding: 8px;
+
+    font-size: 12px;
+  }
+
+  .material-button {
+
+    min-width: 96px;
+
+    padding:
+      11px 8px;
+  }
+
+  .timeline {
+
+    height: 220px;
+  }
+
+}
+
+</style>
+
 </head>
 
 
 <body>
 
-  <!-- ================================
-       01｜標題
-       ================================ -->
 
-  <header class="header">
+<!-- ========================================
+     最上方
+======================================== -->
 
-    <h1>✂️ 自由品勢音樂剪輯器</h1>
+<header class="topbar">
 
-    <p>
-      音樂剪輯・音效卡點・自由品勢專用
-    </p>
+  <div class="brand">
 
-  </header>
+    🥋 自由品勢剪輯器
 
+  </div>
 
-  <!-- ================================
-       02｜導覽列
-       目前先做畫面，之後再接功能
-       ================================ -->
 
-  <nav class="nav">
+  <div class="top-actions">
 
-    <button>🏠 回主頁</button>
+    <button
+      class="top-button"
+      onclick="showToast('📝 草稿功能下一步接上')"
+    >
+      📝 草稿
+    </button>
 
-    <button>❤️ 我的最愛</button>
 
-    <button>🎵 我的成品</button>
+    <button
+      class="top-button"
+      onclick="showToast('🎵 我的成品功能下一步接上')"
+    >
+      🎵 我的成品
+    </button>
 
-    <button>📂 工作包</button>
 
-  </nav>
+    <button
+      class="top-button finish-button"
+      onclick="showToast('✅ 完成輸出功能下一步接上')"
+    >
+      完成
+    </button>
 
+  </div>
 
-  <!-- ================================
-       03｜剪輯器
-       ================================ -->
+</header>
 
-  <main class="editor">
 
+<main class="editor">
 
-    <!-- ================================
-         04｜剪輯工具
-         ================================ -->
 
-    <section class="toolbar">
+<!-- ========================================
+     預覽
+======================================== -->
 
-      <button
-        class="tool-button"
-        onclick="document.getElementById('musicFile').click()"
-      >
-        📁 加入音樂
-      </button>
+<section class="preview">
 
+  <div>
 
-      <input
-        id="musicFile"
-        type="file"
-        accept="audio/*"
-      >
+    <div class="preview-icon">
 
+      🎧
 
-      <button
-        class="tool-button secondary"
-        disabled
-      >
-        ▶ 播放
-      </button>
+    </div>
 
+    <div>
 
-      <button
-        class="tool-button secondary"
-        disabled
-      >
-        ✂️ 分割
-      </button>
+      自由品勢音樂剪輯
 
+    </div>
 
-      <button
-        class="tool-button secondary"
-        disabled
-      >
-        🗑️ 刪除
-      </button>
+    <small>
 
+      點下面的「音樂、拼接、音效」開始製作
 
-      <button
-        class="tool-button secondary"
-        disabled
-      >
-        ↶ 復原
-      </button>
+    </small>
 
-    </section>
+  </div>
 
+</section>
 
-    <!-- ================================
-         05｜目前加入的音樂
-         ================================ -->
 
-    <section class="music-info">
+<!-- ========================================
+     播放
+======================================== -->
 
-      <strong>目前音樂：</strong>
+<div class="playbar">
 
-      <span id="fileName">
-        尚未加入音樂
-      </span>
+  <button
+    class="round-button"
+    onclick="undo()"
+  >
+    ↶
+  </button>
 
-      <audio
-        id="audioPlayer"
-        controls
-      ></audio>
 
-    </section>
+  <button
+    class="round-button play-button"
+    onclick="showToast('▶️ 播放功能下一步接真正音訊')"
+  >
+    ▶
+  </button>
 
 
-    <!-- ================================
-         06｜時間軸
-         ================================ -->
+  <div class="time-text">
 
-    <section class="timeline">
+    00:00 / 01:35
 
-      <div class="timeline-title">
-        🎚️ 時間軸
-      </div>
+  </div>
 
 
-      <div class="time-ruler">
+  <button
+    class="round-button"
+    onclick="redo()"
+  >
+    ↷
+  </button>
 
-        <span>00:00</span>
-        <span>00:15</span>
-        <span>00:30</span>
-        <span>00:45</span>
-        <span>01:00</span>
-        <span>01:15</span>
-        <span>01:30</span>
+</div>
 
-      </div>
 
+<!-- ========================================
+     時間軸
+======================================== -->
 
-      <div class="track">
+<section class="timeline">
 
-        <div class="track-name">
-          音軌 1
-        </div>
 
+  <div class="ruler">
 
-        <div id="audioClip">
-          音樂
-        </div>
+    <span>00:00</span>
 
-      </div>
+    <span>00:10</span>
 
-    </section>
+    <span>00:20</span>
 
-  </main>
+    <span>00:30</span>
 
+    <span>00:40</span>
 
-  <script>
+    <span>00:50</span>
 
-    /* ================================
-       01｜取得網頁元件
-       ================================ */
+    <span>01:00</span>
 
-    const musicFile =
-      document.getElementById("musicFile");
+    <span>01:10</span>
 
-    const fileName =
-      document.getElementById("fileName");
+    <span>01:20</span>
 
-    const audioPlayer =
-      document.getElementById("audioPlayer");
+    <span>01:30</span>
 
-    const audioClip =
-      document.getElementById("audioClip");
+  </div>
 
 
-    /* ================================
-       02｜加入本機音樂
-       使用者選擇 MP3 / M4A / WAV 等音訊
-       ================================ */
+  <div class="playhead"></div>
 
-    musicFile.addEventListener(
-      "change",
-      function () {
 
-        const file = this.files[0];
+  <div class="timeline-scroll">
 
-        if (!file) {
-          return;
+    <div
+      id="track"
+      class="track"
+    ></div>
+
+  </div>
+
+
+</section>
+
+
+<!-- ========================================
+     唯一一組素材入口
+======================================== -->
+
+<div class="material-buttons">
+
+
+  <button
+    class="material-button"
+    onclick="openMaterials('music', this)"
+  >
+    🎵 音樂
+  </button>
+
+
+  <button
+    class="material-button"
+    onclick="openMaterials('splice', this)"
+  >
+    ✂️ 拼接
+  </button>
+
+
+  <button
+    class="material-button"
+    onclick="openMaterials('effect', this)"
+  >
+    🔊 音效
+  </button>
+
+
+</div>
+
+
+<!-- ========================================
+     編輯提示
+======================================== -->
+
+<div
+  id="editHelp"
+  class="edit-help"
+>
+
+  請先點選時間軸上的一段音樂
+
+</div>
+
+
+<!-- ========================================
+     編輯工具
+======================================== -->
+
+<div class="edit-tools">
+
+
+  <button
+    class="edit-button edit-action"
+    onclick="splitClip()"
+    disabled
+  >
+
+    <span class="edit-icon">
+      ✂️
+    </span>
+
+    <span class="edit-name">
+      分割
+    </span>
+
+    <span class="edit-desc">
+      從這裡切開
+    </span>
+
+  </button>
+
+
+  <button
+    class="edit-button edit-action"
+    onclick="deleteClip()"
+    disabled
+  >
+
+    <span class="edit-icon">
+      🗑️
+    </span>
+
+    <span class="edit-name">
+      刪除
+    </span>
+
+    <span class="edit-desc">
+      移除這一段
+    </span>
+
+  </button>
+
+
+  <button
+    class="edit-button edit-action"
+    onclick="changeVolume()"
+    disabled
+  >
+
+    <span class="edit-icon">
+      🔊
+    </span>
+
+    <span class="edit-name">
+      音量
+    </span>
+
+    <span class="edit-desc">
+      調大／調小
+    </span>
+
+  </button>
+
+
+  <button
+    class="edit-button edit-action"
+    onclick="toggleFade()"
+    disabled
+  >
+
+    <span class="edit-icon">
+      ◐
+    </span>
+
+    <span class="edit-name">
+      淡入淡出
+    </span>
+
+    <span class="edit-desc">
+      慢慢進／慢慢退
+    </span>
+
+  </button>
+
+
+  <button
+    class="edit-button edit-action"
+    onclick="duplicateClip()"
+    disabled
+  >
+
+    <span class="edit-icon">
+      ⧉
+    </span>
+
+    <span class="edit-name">
+      複製
+    </span>
+
+    <span class="edit-desc">
+      再做一段
+    </span>
+
+  </button>
+
+
+  <button
+    class="edit-button edit-action"
+    onclick="changeSpeed()"
+    disabled
+  >
+
+    <span class="edit-icon">
+      ⏱️
+    </span>
+
+    <span class="edit-name">
+      變速
+    </span>
+
+    <span class="edit-desc">
+      加快／放慢
+    </span>
+
+  </button>
+
+
+  <button
+    class="edit-button edit-action"
+    onclick="toggleMute()"
+    disabled
+  >
+
+    <span class="edit-icon">
+      🔇
+    </span>
+
+    <span class="edit-name">
+      靜音
+    </span>
+
+    <span class="edit-desc">
+      這段不出聲
+    </span>
+
+  </button>
+
+
+</div>
+
+
+</main>
+
+
+<!-- ========================================
+     素材彈出面板
+======================================== -->
+
+<section
+  id="materialSheet"
+  class="material-sheet"
+>
+
+
+  <div class="sheet-header">
+
+
+    <div
+      id="sheetTitle"
+      class="sheet-title"
+    >
+      🎵 音樂
+    </div>
+
+
+    <button
+      class="close-button"
+      onclick="closeMaterials()"
+    >
+      ×
+    </button>
+
+
+  </div>
+
+
+  <div class="sheet-tools">
+
+
+    <input
+      id="searchInput"
+      class="search-box"
+      type="text"
+      placeholder="搜尋素材"
+      oninput="renderMaterials(currentMaterialType)"
+    >
+
+
+    <label
+      id="uploadButton"
+      class="upload-own"
+      for="uploadInput"
+    >
+      ⬆️ 上傳
+    </label>
+
+
+    <input
+      id="uploadInput"
+      type="file"
+      accept="audio/*"
+      multiple
+    >
+
+
+  </div>
+
+
+  <div
+    id="materialList"
+    class="material-list"
+  ></div>
+
+
+</section>
+
+
+<div
+  id="toast"
+  class="toast"
+></div>
+
+
+<script>
+
+
+/* ========================================
+   測試素材
+   之後再正式連接素材庫
+======================================== */
+
+const materials = {
+
+
+  music: [
+
+    {
+      id: "music01",
+      title: "音樂 01"
+    },
+
+    {
+      id: "music02",
+      title: "音樂 02"
+    },
+
+    {
+      id: "music03",
+      title: "音樂 03"
+    },
+
+    {
+      id: "music04",
+      title: "音樂 04"
+    }
+
+  ],
+
+
+  splice: [
+
+    {
+      id: "splice01",
+      title: "拼接 01"
+    },
+
+    {
+      id: "splice02",
+      title: "拼接 02"
+    },
+
+    {
+      id: "splice03",
+      title: "拼接 03"
+    }
+
+  ],
+
+
+  effect: [
+
+    {
+      id: "effect01",
+      title: "音效 01"
+    },
+
+    {
+      id: "effect02",
+      title: "音效 02"
+    },
+
+    {
+      id: "effect03",
+      title: "音效 03"
+    }
+
+  ]
+
+
+};
+
+
+/* ========================================
+   自己上傳的音樂
+======================================== */
+
+const uploadedMusic = [];
+
+
+document
+  .getElementById(
+    "uploadInput"
+  )
+  .addEventListener(
+    "change",
+    function (event) {
+
+
+      const files =
+        Array.from(
+          event.target.files
+        );
+
+
+      files.forEach(
+        function (file) {
+
+
+          uploadedMusic.push({
+
+            id:
+              "upload_" +
+              Date.now() +
+              "_" +
+              Math.random(),
+
+            title:
+              file.name,
+
+            file:
+              URL.createObjectURL(
+                file
+              )
+
+          });
+
+
         }
+      );
 
 
-        /* 顯示檔案名稱 */
-
-        fileName.textContent =
-          file.name;
-
-
-        /* 建立瀏覽器暫時音訊網址 */
-
-        const audioURL =
-          URL.createObjectURL(file);
+      renderMaterials(
+        "music"
+      );
 
 
-        /* 放進播放器 */
-
-        audioPlayer.src =
-          audioURL;
-
-        audioPlayer.style.display =
-          "block";
+      showToast(
+        "✅ 已加入音樂清單"
+      );
 
 
-        /* 在時間軸顯示音樂片段 */
+    }
+  );
 
-        audioClip.textContent =
-          "🎵 " + file.name;
 
-        audioClip.style.display =
-          "block";
+/* ========================================
+   喜歡／標記
+======================================== */
+
+function isMarked(id) {
+
+
+  return (
+
+    localStorage.getItem(
+      "favorite_" + id
+    ) === "true"
+
+  );
+
+
+}
+
+
+function toggleMark(
+  id,
+  type
+) {
+
+
+  const next =
+    !isMarked(id);
+
+
+  localStorage.setItem(
+
+    "favorite_" + id,
+
+    next
+      ? "true"
+      : "false"
+
+  );
+
+
+  renderMaterials(type);
+
+
+}
+
+
+/* ========================================
+   開啟素材
+======================================== */
+
+let currentMaterialType =
+  "music";
+
+
+function openMaterials(
+  type,
+  button
+) {
+
+
+  currentMaterialType =
+    type;
+
+
+  document
+    .querySelectorAll(
+      ".material-button"
+    )
+    .forEach(
+      function (btn) {
+
+        btn.classList.remove(
+          "active"
+        );
 
       }
     );
 
-  </script>
+
+  button.classList.add(
+    "active"
+  );
+
+
+  const titles = {
+
+    music:
+      "🎵 音樂",
+
+    splice:
+      "✂️ 拼接",
+
+    effect:
+      "🔊 音效"
+
+  };
+
+
+  document
+    .getElementById(
+      "sheetTitle"
+    )
+    .textContent =
+      titles[type];
+
+
+  document
+    .getElementById(
+      "uploadButton"
+    )
+    .style.display =
+
+      type === "music"
+        ? "inline-block"
+        : "none";
+
+
+  document
+    .getElementById(
+      "searchInput"
+    )
+    .value = "";
+
+
+  renderMaterials(type);
+
+
+  document
+    .getElementById(
+      "materialSheet"
+    )
+    .classList.add(
+      "show"
+    );
+
+
+}
+
+
+/* ========================================
+   關閉素材
+======================================== */
+
+function closeMaterials() {
+
+
+  document
+    .getElementById(
+      "materialSheet"
+    )
+    .classList.remove(
+      "show"
+    );
+
+
+  document
+    .querySelectorAll(
+      ".material-button"
+    )
+    .forEach(
+      function (btn) {
+
+        btn.classList.remove(
+          "active"
+        );
+
+      }
+    );
+
+
+}
+
+
+/* ========================================
+   顯示素材
+   標記過的自動排前面
+======================================== */
+
+function renderMaterials(type) {
+
+
+  const list =
+    document.getElementById(
+      "materialList"
+    );
+
+
+  let data = [
+    ...materials[type]
+  ];
+
+
+  if (
+    type === "music"
+  ) {
+
+
+    data = [
+
+      ...uploadedMusic,
+
+      ...data
+
+    ];
+
+
+  }
+
+
+  const keyword =
+    document
+      .getElementById(
+        "searchInput"
+      )
+      .value
+      .trim()
+      .toLowerCase();
+
+
+  if (keyword) {
+
+
+    data =
+      data.filter(
+        function (item) {
+
+          return item
+            .title
+            .toLowerCase()
+            .includes(
+              keyword
+            );
+
+        }
+      );
+
+
+  }
+
+
+  data.sort(
+    function (a, b) {
+
+
+      return (
+
+        Number(
+          isMarked(b.id)
+        )
+
+        -
+
+        Number(
+          isMarked(a.id)
+        )
+
+      );
+
+
+    }
+  );
+
+
+  list.innerHTML =
+    "";
+
+
+  data.forEach(
+    function (item) {
+
+
+      const marked =
+        isMarked(
+          item.id
+        );
+
+
+      let symbol =
+        "";
+
+
+      let color =
+        "white";
+
+
+      if (
+        type === "music"
+      ) {
+
+
+        symbol =
+          marked
+            ? "♥"
+            : "♡";
+
+
+        if (marked) {
+
+          color =
+            "#ff4d6d";
+
+        }
+
+
+      }
+
+
+      if (
+        type === "splice"
+      ) {
+
+
+        symbol =
+          "✂";
+
+
+        if (marked) {
+
+          color =
+            "#a855f7";
+
+        }
+
+
+      }
+
+
+      if (
+        type === "effect"
+      ) {
+
+
+        symbol =
+          marked
+            ? "★"
+            : "☆";
+
+
+        if (marked) {
+
+          color =
+            "#ffd54a";
+
+        }
+
+
+      }
+
+
+      const row =
+        document.createElement(
+          "div"
+        );
+
+
+      row.className =
+        "material-row";
+
+
+      row.innerHTML = `
+
+        <button
+          class="mark-button"
+          style="color:${color}"
+        >
+          ${symbol}
+        </button>
+
+
+        <div class="material-info">
+
+          <div class="material-name">
+            ${item.title}
+          </div>
+
+          <div class="material-small">
+
+            ${
+              marked
+                ? "已標記・優先顯示"
+                : "按「使用」加入時間軸"
+            }
+
+          </div>
+
+        </div>
+
+
+        <button class="use-button">
+
+          使用
+
+        </button>
+
+      `;
+
+
+      row
+        .querySelector(
+          ".mark-button"
+        )
+        .onclick =
+          function () {
+
+
+            toggleMark(
+              item.id,
+              type
+            );
+
+
+          };
+
+
+      row
+        .querySelector(
+          ".use-button"
+        )
+        .onclick =
+          function () {
+
+
+            addToTimeline(
+              item,
+              type
+            );
+
+
+          };
+
+
+      list.appendChild(
+        row
+      );
+
+
+    }
+  );
+
+
+}
+
+
+/* ========================================
+   時間軸資料
+======================================== */
+
+let clips =
+  [];
+
+
+let selectedId =
+  null;
+
+
+let undoStack =
+  [];
+
+
+let redoStack =
+  [];
+
+
+/* ========================================
+   保存復原紀錄
+======================================== */
+
+function saveHistory() {
+
+
+  undoStack.push(
+
+    JSON.stringify(
+      clips
+    )
+
+  );
+
+
+  if (
+    undoStack.length >
+    30
+  ) {
+
+
+    undoStack.shift();
+
+
+  }
+
+
+  redoStack =
+    [];
+
+
+}
+
+
+/* ========================================
+   加入時間軸
+======================================== */
+
+function addToTimeline(
+  item,
+  type
+) {
+
+
+  saveHistory();
+
+
+  clips.push({
+
+
+    uid:
+
+      Date.now() +
+      "_" +
+      Math.random(),
+
+
+    title:
+      item.title,
+
+
+    type:
+      type,
+
+
+    muted:
+      false,
+
+
+    volume:
+      100,
+
+
+    speed:
+      1,
+
+
+    fade:
+      false
+
+
+  });
+
+
+  renderTimeline();
+
+
+  showToast(
+    "✅ 已加入時間軸"
+  );
+
+
+}
+
+
+/* ========================================
+   顯示時間軸
+======================================== */
+
+function renderTimeline() {
+
+
+  const track =
+    document.getElementById(
+      "track"
+    );
+
+
+  track.innerHTML =
+    "";
+
+
+  if (
+    clips.length ===
+    0
+  ) {
+
+
+    track.innerHTML = `
+
+      <div class="empty-track">
+
+        點「音樂、拼接或音效」
+        再按「使用」
+
+      </div>
+
+    `;
+
+
+    selectedId =
+      null;
+
+
+    updateEditTools();
+
+
+    return;
+
+
+  }
+
+
+  clips.forEach(
+    function (clip) {
+
+
+      const div =
+        document.createElement(
+          "div"
+        );
+
+
+      div.className =
+        "clip " +
+        clip.type;
+
+
+      if (
+        clip.uid ===
+        selectedId
+      ) {
+
+
+        div.classList.add(
+          "selected"
+        );
+
+
+      }
+
+
+      div.innerHTML = `
+
+        <div class="clip-title">
+
+          ${clip.title}
+
+        </div>
+
+
+        <div class="clip-info">
+
+          ${
+            clip.muted
+              ? "🔇"
+              : "🔊"
+          }
+
+          ${clip.volume}%
+
+          ・
+
+          ${clip.speed}x
+
+          ${
+            clip.fade
+              ? "・淡入淡出"
+              : ""
+          }
+
+        </div>
+
+      `;
+
+
+      div.onclick =
+        function () {
+
+
+          selectedId =
+            clip.uid;
+
+
+          renderTimeline();
+
+
+        };
+
+
+      track.appendChild(
+        div
+      );
+
+
+    }
+  );
+
+
+  updateEditTools();
+
+
+}
+
+
+/* ========================================
+   啟用／停用工具
+======================================== */
+
+function updateEditTools() {
+
+
+  const selected =
+    clips.find(
+      function (clip) {
+
+        return (
+          clip.uid ===
+          selectedId
+        );
+
+      }
+    );
+
+
+  document
+    .querySelectorAll(
+      ".edit-action"
+    )
+    .forEach(
+      function (button) {
+
+
+        button.disabled =
+          !selected;
+
+
+      }
+    );
+
+
+  document
+    .getElementById(
+      "editHelp"
+    )
+    .textContent =
+
+      selected
+
+      ? "目前選擇：" +
+        selected.title
+
+      : "請先點選時間軸上的一段音樂";
+
+
+}
+
+
+/* ========================================
+   找選取中的片段
+======================================== */
+
+function getSelectedIndex() {
+
+
+  return clips.findIndex(
+    function (clip) {
+
+
+      return (
+        clip.uid ===
+        selectedId
+      );
+
+
+    }
+  );
+
+
+}
+
+
+/* ========================================
+   分割
+======================================== */
+
+function splitClip() {
+
+
+  const index =
+    getSelectedIndex();
+
+
+  if (
+    index < 0
+  ) {
+
+    return;
+
+  }
+
+
+  saveHistory();
+
+
+  const original =
+    clips[index];
+
+
+  const baseTitle =
+    original.title
+      .replace(
+        "・前半",
+        ""
+      );
+
+
+  clips[index] = {
+
+    ...original,
+
+    title:
+      baseTitle +
+      "・前半"
+
+  };
+
+
+  clips.splice(
+
+    index + 1,
+
+    0,
+
+    {
+
+      ...original,
+
+      uid:
+        Date.now() +
+        "_" +
+        Math.random(),
+
+      title:
+        baseTitle +
+        "・後半"
+
+    }
+
+  );
+
+
+  renderTimeline();
+
+
+  showToast(
+    "✂️ 已分割成兩段"
+  );
+
+
+}
+
+
+/* ========================================
+   刪除
+======================================== */
+
+function deleteClip() {
+
+
+  const index =
+    getSelectedIndex();
+
+
+  if (
+    index < 0
+  ) {
+
+    return;
+
+  }
+
+
+  saveHistory();
+
+
+  clips.splice(
+    index,
+    1
+  );
+
+
+  selectedId =
+    null;
+
+
+  renderTimeline();
+
+
+  showToast(
+    "🗑️ 已刪除"
+  );
+
+
+}
+
+
+/* ========================================
+   音量
+======================================== */
+
+function changeVolume() {
+
+
+  const index =
+    getSelectedIndex();
+
+
+  if (
+    index < 0
+  ) {
+
+    return;
+
+  }
+
+
+  saveHistory();
+
+
+  const values = [
+
+    100,
+
+    75,
+
+    50,
+
+    25
+
+  ];
+
+
+  const current =
+    clips[index]
+      .volume;
+
+
+  let next =
+    values
+      .indexOf(
+        current
+      )
+    + 1;
+
+
+  if (
+    next >=
+    values.length
+  ) {
+
+
+    next =
+      0;
+
+
+  }
+
+
+  clips[index]
+    .volume =
+      values[next];
+
+
+  renderTimeline();
+
+
+  showToast(
+
+    "🔊 音量：" +
+
+    clips[index]
+      .volume +
+
+    "%"
+
+  );
+
+
+}
+
+
+/* ========================================
+   淡入淡出
+======================================== */
+
+function toggleFade() {
+
+
+  const index =
+    getSelectedIndex();
+
+
+  if (
+    index < 0
+  ) {
+
+    return;
+
+  }
+
+
+  saveHistory();
+
+
+  clips[index]
+    .fade =
+
+      !clips[index]
+        .fade;
+
+
+  renderTimeline();
+
+
+  showToast(
+
+    clips[index]
+      .fade
+
+      ? "◐ 已開啟淡入淡出"
+
+      : "◐ 已關閉淡入淡出"
+
+  );
+
+
+}
+
+
+/* ========================================
+   複製
+======================================== */
+
+function duplicateClip() {
+
+
+  const index =
+    getSelectedIndex();
+
+
+  if (
+    index < 0
+  ) {
+
+    return;
+
+  }
+
+
+  saveHistory();
+
+
+  clips.splice(
+
+    index + 1,
+
+    0,
+
+    {
+
+      ...clips[index],
+
+      uid:
+        Date.now() +
+        "_" +
+        Math.random(),
+
+      title:
+        clips[index]
+          .title +
+        "・複製"
+
+    }
+
+  );
+
+
+  renderTimeline();
+
+
+  showToast(
+    "⧉ 已複製一段"
+  );
+
+
+}
+
+
+/* ========================================
+   變速
+======================================== */
+
+function changeSpeed() {
+
+
+  const index =
+    getSelectedIndex();
+
+
+  if (
+    index < 0
+  ) {
+
+    return;
+
+  }
+
+
+  saveHistory();
+
+
+  const speeds = [
+
+    1,
+
+    1.25,
+
+    1.5,
+
+    0.75
+
+  ];
+
+
+  let next =
+
+    speeds.indexOf(
+      clips[index]
+        .speed
+    )
+
+    + 1;
+
+
+  if (
+    next >=
+    speeds.length
+  ) {
+
+
+    next =
+      0;
+
+
+  }
+
+
+  clips[index]
+    .speed =
+      speeds[next];
+
+
+  renderTimeline();
+
+
+  showToast(
+
+    "⏱️ 速度：" +
+
+    clips[index]
+      .speed +
+
+    "x"
+
+  );
+
+
+}
+
+
+/* ========================================
+   靜音
+======================================== */
+
+function toggleMute() {
+
+
+  const index =
+    getSelectedIndex();
+
+
+  if (
+    index < 0
+  ) {
+
+    return;
+
+  }
+
+
+  saveHistory();
+
+
+  clips[index]
+    .muted =
+
+      !clips[index]
+        .muted;
+
+
+  renderTimeline();
+
+
+  showToast(
+
+    clips[index]
+      .muted
+
+      ? "🔇 這一段已靜音"
+
+      : "🔊 已恢復聲音"
+
+  );
+
+
+}
+
+
+/* ========================================
+   復原
+======================================== */
+
+function undo() {
+
+
+  if (
+    undoStack.length ===
+    0
+  ) {
+
+
+    showToast(
+      "目前沒有可以復原的動作"
+    );
+
+
+    return;
+
+
+  }
+
+
+  redoStack.push(
+
+    JSON.stringify(
+      clips
+    )
+
+  );
+
+
+  clips =
+
+    JSON.parse(
+      undoStack.pop()
+    );
+
+
+  selectedId =
+    null;
+
+
+  renderTimeline();
+
+
+  showToast(
+    "↶ 已復原"
+  );
+
+
+}
+
+
+/* ========================================
+   重做
+======================================== */
+
+function redo() {
+
+
+  if (
+    redoStack.length ===
+    0
+  ) {
+
+
+    showToast(
+      "目前沒有可以重做的動作"
+    );
+
+
+    return;
+
+
+  }
+
+
+  undoStack.push(
+
+    JSON.stringify(
+      clips
+    )
+
+  );
+
+
+  clips =
+
+    JSON.parse(
+      redoStack.pop()
+    );
+
+
+  selectedId =
+    null;
+
+
+  renderTimeline();
+
+
+  showToast(
+    "↷ 已重做"
+  );
+
+
+}
+
+
+/* ========================================
+   提示訊息
+======================================== */
+
+let toastTimer;
+
+
+function showToast(text) {
+
+
+  const toast =
+    document.getElementById(
+      "toast"
+    );
+
+
+  toast.textContent =
+    text;
+
+
+  toast.style.display =
+    "block";
+
+
+  clearTimeout(
+    toastTimer
+  );
+
+
+  toastTimer =
+
+    setTimeout(
+      function () {
+
+
+        toast.style.display =
+          "none";
+
+
+      },
+
+      1700
+
+    );
+
+
+}
+
+
+/* ========================================
+   初始畫面
+======================================== */
+
+renderTimeline();
+
+
+</script>
+
 
 </body>
+
 </html>
