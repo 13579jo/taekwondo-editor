@@ -706,7 +706,8 @@ window.addEventListener("storage",()=>{libraryManifest=null});
    ========================================================= */
 async function openMaterialPanel(type){
   const names={music:"🎵 音樂",splice:"✂️ 拼接",effect:"🔊 音效"};
-  openModal(names[type],`<div class="panel-note">素材載入中…</div>`);
+  // 素材面板固定保持開啟：只有按右上角 × 才關閉
+  openModal(names[type],`<div class="panel-note">素材載入中…</div>`,{closeOnBackdrop:false});
 
   try{
     const manifest=await loadLibraryManifest();
@@ -756,7 +757,10 @@ function bindMaterialPanel(type){
   });
 
   document.querySelectorAll("[data-use]").forEach(btn=>{
-    btn.addEventListener("click",async()=>{
+    btn.addEventListener("click",async e=>{
+      // 防止「使用」按鈕的點擊事件冒泡到外層，避免素材視窗被誤關閉
+      e.preventDefault();
+      e.stopPropagation();
       const manifest=await loadLibraryManifest();
       const m=(manifest[type]||[]).find(x=>x.id===btn.dataset.use);
       if(!m) return;
@@ -1387,14 +1391,20 @@ async function dbGet(store,id){
 /* =========================================================
    Modal / Toast / Utils
    ========================================================= */
-function openModal(title,html){
+function openModal(title,html,options={}){
   document.getElementById("modalTitle").textContent=title;
   document.getElementById("modalBody").innerHTML=html;
-  document.getElementById("modalBackdrop").classList.add("show");
+  const backdrop=document.getElementById("modalBackdrop");
+  // 一般視窗可點背景關閉；素材清單則鎖定，只能按 × 關閉
+  backdrop.dataset.closeOnBackdrop=options.closeOnBackdrop===false?"0":"1";
+  backdrop.classList.add("show");
 }
 function closeModal(){document.getElementById("modalBackdrop").classList.remove("show")}
 document.getElementById("modalClose").addEventListener("click",closeModal);
-document.getElementById("modalBackdrop").addEventListener("click",e=>{if(e.target.id==="modalBackdrop")closeModal()});
+document.getElementById("modalBackdrop").addEventListener("click",e=>{
+  const backdrop=e.currentTarget;
+  if(e.target===backdrop && backdrop.dataset.closeOnBackdrop!=="0") closeModal();
+});
 
 function showToast(text){
   const t=document.getElementById("toast");t.textContent=text;t.style.display="block";clearTimeout(showToast.timer);
