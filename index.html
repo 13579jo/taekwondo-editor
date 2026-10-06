@@ -89,7 +89,8 @@ button:disabled{cursor:default}
 .clip.dragging{opacity:.88;z-index:35;cursor:grabbing}
 .clip-title{position:absolute;left:16px;right:16px;top:3px;z-index:5;font-size:10px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px #000}
 .wave-canvas{position:absolute;left:12px;right:12px;top:18px;width:calc(100% - 24px);height:35px;pointer-events:none}
-.trim-handle{position:absolute;top:0;bottom:0;width:12px;background:#fff;z-index:12;cursor:ew-resize;touch-action:none}
+.trim-handle{display:none;position:absolute;top:0;bottom:0;width:12px;background:#fff;z-index:12;cursor:ew-resize;touch-action:none}
+.clip.selected .trim-handle{display:block}
 .trim-handle.left{left:0;border-radius:5px 0 0 5px}
 .trim-handle.right{right:0;border-radius:0 5px 5px 0}
 .trim-handle::after{content:"";position:absolute;left:4px;top:21px;width:4px;height:15px;border-radius:4px;background:#aab0bb}
@@ -706,8 +707,7 @@ window.addEventListener("storage",()=>{libraryManifest=null});
    ========================================================= */
 async function openMaterialPanel(type){
   const names={music:"🎵 音樂",splice:"✂️ 拼接",effect:"🔊 音效"};
-  // 素材面板固定保持開啟：只有按右上角 × 才關閉
-  openModal(names[type],`<div class="panel-note">素材載入中…</div>`,{closeOnBackdrop:false});
+  openModal(names[type],`<div class="panel-note">素材載入中…</div>`);
 
   try{
     const manifest=await loadLibraryManifest();
@@ -757,10 +757,7 @@ function bindMaterialPanel(type){
   });
 
   document.querySelectorAll("[data-use]").forEach(btn=>{
-    btn.addEventListener("click",async e=>{
-      // 防止「使用」按鈕的點擊事件冒泡到外層，避免素材視窗被誤關閉
-      e.preventDefault();
-      e.stopPropagation();
+    btn.addEventListener("click",async()=>{
       const manifest=await loadLibraryManifest();
       const m=(manifest[type]||[]).find(x=>x.id===btn.dataset.use);
       if(!m) return;
@@ -769,8 +766,8 @@ function bindMaterialPanel(type){
       try{
         await addLibraryMaterial(m);
         btn.textContent="✅ 已加入";
+        closeModal();
         showToast("✅ 已加入時間軸");
-        setTimeout(()=>{if(document.body.contains(btn)){btn.disabled=false;btn.textContent=old}},900);
       }catch(e){
         console.error(e);btn.disabled=false;btn.textContent=old;showToast("⚠️ 這個素材目前讀取不到");
       }
@@ -855,11 +852,18 @@ function createPeaks(buffer,count){
    ========================================================= */
 function clipDuration(c){return Math.max(MIN_CLIP,(c.trimEnd-c.trimStart)/c.speed)}
 function clipEnd(c){return c.start+clipDuration(c)}
-function projectDuration(){return Math.max(0,...clips.map(clipEnd),...beats,0)}
+function projectDuration(){return Math.max(0,...clips.map(clipEnd),0)}
 function getSelected(){return clips.find(c=>c.id===selectedClipId)||null}
-function leftPad(){return timelineShell.clientWidth/2}
-function getPlayheadTime(){return Math.max(0,timelineScroll.scrollLeft/PPS)}
-function setPlayheadTime(t){timelineScroll.scrollLeft=Math.max(0,t*PPS)}
+function leftPad(){return timelineScroll.clientWidth/2}
+function getPlayheadTime(){
+  const max=projectDuration();
+  return Math.min(max,Math.max(0,timelineScroll.scrollLeft/PPS));
+}
+function setPlayheadTime(t){
+  const max=projectDuration();
+  const safe=Number.isFinite(t)?t:0;
+  timelineScroll.scrollLeft=Math.max(0,Math.min(max,safe))*PPS;
+}
 function trackCount(){return clips.length?Math.max(...clips.map(c=>c.track))+1:0}
 
 /* =========================================================
@@ -868,16 +872,22 @@ function trackCount(){return clips.length?Math.max(...clips.map(c=>c.track))+1:0
 function renderAll(){
   const keepLeft=timelineScroll.scrollLeft,keepTop=timelineScroll.scrollTop;
   const pad=leftPad();
-  const duration=Math.max(DEFAULT_DURATION,Math.ceil(projectDuration()+8));
+  const duration=projectDuration();
+  const rulerDuration=Math.ceil(duration);
   const tracks=trackCount();
 
+  // 內容寬度只到目前最晚結束的片段；最右端會剛好停在中央白線
   timelineContent.style.width=(pad*2+duration*PPS)+"px";
   timelineContent.style.height=(RULER_H+Math.max(260,tracks*TRACK_H+60))+"px";
-  renderRuler(duration,pad);renderTracks(tracks);renderBeats(pad);renderClips(pad);
+  renderRuler(rulerDuration,pad);renderTracks(tracks);renderBeats(pad);renderClips(pad);
   emptyTimeline.style.display=clips.length?"none":"block";
   updateToolState();updateTimeReadout();
 
-  requestAnimationFrame(()=>{timelineScroll.scrollLeft=keepLeft;timelineScroll.scrollTop=keepTop});
+  requestAnimationFrame(()=>{
+    timelineScroll.scrollLeft=Math.min(Math.max(0,keepLeft),duration*PPS);
+    timelineScroll.scrollTop=keepTop;
+    updateTimeReadout();
+  });
 }
 
 function renderRuler(duration,pad){
@@ -954,11 +964,7 @@ function drawWave(canvas,c,a){
    選取 / 拖動 / 裁切
    ========================================================= */
 function bindClipEvents(el,c){
-  el.addEventListener("click",e=>{
-    if(e.target.classList.contains("trim-handle"))return;
-    selectedClipId=c.id;renderAll();
-  });
-
+  // 點一下片段：顯示白色左右微調把手；拖動後放手：自動取消白邊
   el.addEventListener("pointerdown",e=>{
     if(e.target.classList.contains("trim-handle"))return;
     if(e.button!==0)return;
@@ -970,13 +976,14 @@ function bindClipEvents(el,c){
 }
 
 function startClipDrag(e,el,c){
-  e.preventDefault();e.stopPropagation();selectedClipId=c.id;
+  e.preventDefault();e.stopPropagation();
   const before=snapshot(),sx=e.clientX,sy=e.clientY,oldStart=c.start,oldTrack=c.track;
   const maxTrack=trackCount();let moved=false;
+  selectedClipId=c.id;
   el.classList.add("dragging");
 
   function move(ev){
-    if(Math.abs(ev.clientX-sx)>3 || Math.abs(ev.clientY-sy)>3)moved=true;
+    if(Math.abs(ev.clientX-sx)>5 || Math.abs(ev.clientY-sy)>5)moved=true;
     c.start=Math.max(0,oldStart+(ev.clientX-sx)/PPS);
     c.track=Math.max(0,Math.min(maxTrack,oldTrack+Math.round((ev.clientY-sy)/TRACK_H)));
     const pad=leftPad();
@@ -986,7 +993,15 @@ function startClipDrag(e,el,c){
 
   function up(){
     window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);
-    if(moved){pushCollisions(c);normalizeTracks();pushUndoSnapshot(before)}
+    if(moved){
+      snapClipToNeighbors(c);
+      pushCollisions(c);
+      normalizeTracks();
+      pushUndoSnapshot(before);
+      selectedClipId=null; // 放手後白邊自動消失
+    }else{
+      selectedClipId=c.id; // 單純點一下才保留白邊，方便左右微調
+    }
     renderAll();
   }
   window.addEventListener("pointermove",move);window.addEventListener("pointerup",up);
@@ -1015,6 +1030,7 @@ function startTrim(e,el,c,side){
   function up(){
     window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);
     if(changed){pushCollisions(c);normalizeTracks();pushUndoSnapshot(before)}
+    selectedClipId=null; // 左右微調完成，放手就把白邊收起來
     renderAll();
   }
   window.addEventListener("pointermove",move);window.addEventListener("pointerup",up);
@@ -1024,13 +1040,40 @@ function startTrim(e,el,c,side){
    同軌碰撞自動讓位 / 空軌收掉
    ========================================================= */
 function overlaps(a,b){return a.track===b.track && a.start<clipEnd(b)-.001 && clipEnd(a)>b.start+.001}
+
+// 靠近同一音軌其他片段的頭/尾時，自動吸附成「無縫拼接」
+function snapClipToNeighbors(c){
+  const tolerance=Math.max(.08,18/PPS);
+  const d=clipDuration(c);
+  let best={dist:Math.abs(c.start),start:0};
+
+  clips.forEach(other=>{
+    if(other.id===c.id || other.track!==c.track)return;
+
+    // c 的開頭吸到 other 的尾端
+    const startAtOtherEnd=clipEnd(other);
+    const d1=Math.abs(c.start-startAtOtherEnd);
+    if(d1<best.dist)best={dist:d1,start:startAtOtherEnd};
+
+    // c 的尾端吸到 other 的開頭
+    const startBeforeOther=other.start-d;
+    if(startBeforeOther>=0){
+      const d2=Math.abs(clipEnd(c)-other.start);
+      if(d2<best.dist)best={dist:d2,start:startBeforeOther};
+    }
+  });
+
+  if(best.dist<=tolerance)c.start=Math.max(0,best.start);
+}
+
 function pushCollisions(moved){
   const queue=[moved];let guard=0;
   while(queue.length && guard++<300){
     const cur=queue.shift(),end=clipEnd(cur);
     clips.forEach(other=>{
       if(other.id!==cur.id && other.track===cur.track && overlaps(cur,other)){
-        other.start=end+.02;queue.push(other);
+        other.start=end; // 直接貼齊，不再多留 0.02 秒靜音縫隙
+        queue.push(other);
       }
     });
   }
@@ -1044,17 +1087,57 @@ function normalizeTracks(){
 /* =========================================================
    時間軸移動：白線固定，左右滑時間軸
    ========================================================= */
-timelineScroll.addEventListener("scroll",()=>{if(!isPlaying){updateTimeReadout();updateToolState()}});
+timelineScroll.addEventListener("scroll",()=>{
+  if(!isPlaying){
+    const max=projectDuration()*PPS;
+    if(timelineScroll.scrollLeft<0)timelineScroll.scrollLeft=0;
+    else if(timelineScroll.scrollLeft>max)timelineScroll.scrollLeft=max;
+    updateTimeReadout();
+    updateToolState();
+  }
+});
 window.addEventListener("resize",renderAll);
 
-/* 點時間軸空白處，將那個時間移到中央白線 */
+/* 點時間軸：白線到該位置；左右滑：只捲動，不再因 pointerdown 亂跳 */
+let timelineTap=null;
+
 timelineShell.addEventListener("pointerdown",e=>{
   if(e.target.closest(".clip,button,audio"))return;
-  const contentRect=timelineContent.getBoundingClientRect();
-  const absoluteX=e.clientX-contentRect.left+timelineScroll.scrollLeft;
-  const time=Math.max(0,(absoluteX-leftPad())/PPS);
-  setPlayheadTime(time);updateTimeReadout();
+  timelineTap={
+    id:e.pointerId,
+    x:e.clientX,
+    y:e.clientY,
+    scrollLeft:timelineScroll.scrollLeft,
+    moved:false
+  };
 });
+
+timelineShell.addEventListener("pointermove",e=>{
+  if(!timelineTap || timelineTap.id!==e.pointerId)return;
+  if(
+    Math.abs(e.clientX-timelineTap.x)>7 ||
+    Math.abs(e.clientY-timelineTap.y)>7 ||
+    Math.abs(timelineScroll.scrollLeft-timelineTap.scrollLeft)>4
+  ){
+    timelineTap.moved=true;
+  }
+});
+
+timelineShell.addEventListener("pointerup",e=>{
+  if(!timelineTap || timelineTap.id!==e.pointerId)return;
+  const tap=timelineTap;
+  timelineTap=null;
+  if(tap.moved)return;
+
+  // getBoundingClientRect 已經包含捲動位移，不能再把 scrollLeft 加第二次
+  const contentRect=timelineContent.getBoundingClientRect();
+  const absoluteX=e.clientX-contentRect.left;
+  const time=(absoluteX-leftPad())/PPS;
+  setPlayheadTime(time);
+  updateTimeReadout();
+});
+
+timelineShell.addEventListener("pointercancel",()=>{timelineTap=null});
 
 /* =========================================================
    工具狀態
@@ -1391,20 +1474,14 @@ async function dbGet(store,id){
 /* =========================================================
    Modal / Toast / Utils
    ========================================================= */
-function openModal(title,html,options={}){
+function openModal(title,html){
   document.getElementById("modalTitle").textContent=title;
   document.getElementById("modalBody").innerHTML=html;
-  const backdrop=document.getElementById("modalBackdrop");
-  // 一般視窗可點背景關閉；素材清單則鎖定，只能按 × 關閉
-  backdrop.dataset.closeOnBackdrop=options.closeOnBackdrop===false?"0":"1";
-  backdrop.classList.add("show");
+  document.getElementById("modalBackdrop").classList.add("show");
 }
 function closeModal(){document.getElementById("modalBackdrop").classList.remove("show")}
 document.getElementById("modalClose").addEventListener("click",closeModal);
-document.getElementById("modalBackdrop").addEventListener("click",e=>{
-  const backdrop=e.currentTarget;
-  if(e.target===backdrop && backdrop.dataset.closeOnBackdrop!=="0") closeModal();
-});
+document.getElementById("modalBackdrop").addEventListener("click",e=>{if(e.target.id==="modalBackdrop")closeModal()});
 
 function showToast(text){
   const t=document.getElementById("toast");t.textContent=text;t.style.display="block";clearTimeout(showToast.timer);
