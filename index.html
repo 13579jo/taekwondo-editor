@@ -87,8 +87,8 @@ button:disabled{cursor:default}
 .clip.effect{background:var(--effect)}
 .clip.selected{border-color:#fff;box-shadow:0 0 0 2px var(--pink)}
 .clip.dragging{opacity:.88;z-index:35;cursor:grabbing}
-.clip-title{position:absolute;left:16px;right:16px;top:3px;z-index:5;font-size:10px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px #000}
-.wave-canvas{position:absolute;left:12px;right:12px;top:18px;width:calc(100% - 24px);height:35px;pointer-events:none}
+.clip-title{position:absolute;left:8px;right:8px;top:3px;z-index:5;font-size:10px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px #000}
+.wave-canvas{position:absolute;left:1px;right:1px;top:18px;width:calc(100% - 2px);height:35px;pointer-events:none}
 .trim-handle{display:none;position:absolute;top:0;bottom:0;width:12px;background:#fff;z-index:12;cursor:ew-resize;touch-action:none}
 .clip.selected .trim-handle{display:block}
 .trim-handle.left{left:0;border-radius:5px 0 0 5px}
@@ -947,7 +947,14 @@ function drawWave(canvas,c,a){
   const ctx=canvas.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
   const start=Math.floor((c.trimStart/a.duration)*a.peaks.length);
   const end=Math.max(start+1,Math.floor((c.trimEnd/a.duration)*a.peaks.length));
-  const mid=h/2;ctx.beginPath();
+  const mid=h/2;
+  ctx.beginPath();
+  ctx.moveTo(0,mid);
+  ctx.lineTo(w,mid);
+  ctx.lineWidth=1;
+  ctx.strokeStyle="rgba(255,255,255,.25)";
+  ctx.stroke();
+  ctx.beginPath();
   for(let x=0;x<w;x++){
     const idx=Math.min(a.peaks.length-1,start+Math.floor((x/Math.max(1,w-1))*(end-start)));
     const y=(a.peaks[idx]||0)*mid*.95;
