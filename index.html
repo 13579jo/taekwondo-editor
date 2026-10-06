@@ -2,6617 +2,1197 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0d0f14">
 <title>自由品勢音樂剪輯器</title>
-
 <style>
-*{
-  box-sizing:border-box;
-}
-
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#0f1014;
-  --panel:#181a20;
-  --panel2:#22252d;
-  --line:#363944;
+  --bg:#0d0f14;
+  --panel:#171a21;
+  --panel2:#20242d;
+  --line:#343945;
   --text:#fff;
-  --sub:#a9adba;
+  --sub:#9ca3b2;
   --pink:#ff356b;
   --music:#078b98;
-  --splice:#6d50cf;
-  --effect:#c47a16;
+  --splice:#7355d8;
+  --effect:#c67a16;
   --beat:#ffd447;
   --danger:#ff3b45;
+  --ruler-h:38px;
+  --track-h:70px;
 }
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Arial,"Microsoft JhengHei",sans-serif;overflow-x:hidden}
+button,input,select{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:default}
 
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:Arial,"Microsoft JhengHei",sans-serif;
-}
-
-button,
-input,
-select{
-  font-family:inherit;
-}
-
-button{
-  cursor:pointer;
-}
-
-
-/* =========================================================
-   01｜最上方功能列
-   ========================================================= */
-
-.top-shell{
-  background:#17191f;
+/* ===== 最上方：固定一排 5 顆 ===== */
+.app-top{
+  position:sticky;top:0;z-index:120;
+  background:#151820;
   border-bottom:1px solid var(--line);
+  padding:max(8px,env(safe-area-inset-top)) 7px 8px;
 }
-
-.main-top-row{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  padding:10px 12px;
-  overflow-x:auto;
-  overflow-y:hidden;
-  white-space:nowrap;
-  -webkit-overflow-scrolling:touch;
+.top-row{
+  display:flex;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
 }
-
-.main-top-row .top-btn{
-  flex:0 0 auto;
-}
-
+.top-row::-webkit-scrollbar{display:none}
 .top-btn{
-  border:0;
-  border-radius:10px;
-  padding:11px 14px;
-  background:#30333d;
-  color:#fff;
-  font-weight:800;
-}
-
-.finish-btn{
-  background:var(--pink);
-}
-
-
-/* =========================================================
-   02｜標題
-   ========================================================= */
-
-.editor-title{
-  padding:17px 12px;
-  text-align:center;
-  background:#0b0c10;
-  border-bottom:1px solid #292b33;
-}
-
-.editor-title .icon{
-  font-size:28px;
-}
-
-.editor-title h1{
-  font-size:20px;
-  margin:4px 0;
-}
-
-.editor-title p{
-  margin:0;
-  color:#858a98;
-  font-size:12px;
-}
-
-
-/* =========================================================
-   03｜時間軸
-   ========================================================= */
-
-.timeline-shell{
-  position:relative;
-  height:390px;
-  background:#17191e;
-  border-bottom:1px solid var(--line);
-  overflow:hidden;
-}
-
-.timeline-scroll{
-  position:relative;
-  width:100%;
-  height:100%;
-  overflow:auto;
-}
-
-.timeline-content{
-  position:relative;
-  min-width:100%;
-  min-height:100%;
-}
-
-.ruler{
-  position:absolute;
-  top:0;
-  left:0;
-  height:42px;
-  width:100%;
-  background:#191b21;
-  border-bottom:1px solid #333640;
-  z-index:4;
-}
-
-.ruler-mark{
-  position:absolute;
-  top:0;
-  height:42px;
-  border-left:1px solid #454954;
-  color:#aeb2bd;
-  font-size:11px;
-  padding:6px 0 0 5px;
-  white-space:nowrap;
-}
-
-.tracks-bg{
-  position:absolute;
-  left:0;
-  top:42px;
-  right:0;
-}
-
-.track-row{
-  position:absolute;
-  left:0;
-  right:0;
-  height:72px;
-  border-bottom:1px solid #292c34;
-  background:rgba(255,255,255,.012);
-}
-
-.clips-layer{
-  position:absolute;
-  inset:0;
-  z-index:8;
-}
-
-.beats-layer{
-  position:absolute;
-  left:0;
-  top:42px;
-  right:0;
-  bottom:0;
-  z-index:6;
-  pointer-events:none;
-}
-
-.beat-line{
-  position:absolute;
-  top:0;
-  bottom:0;
-  width:2px;
-  background:rgba(255,212,71,.7);
-}
-
-.beat-line::before{
-  content:"🚩";
-  position:absolute;
-  top:1px;
-  left:-8px;
-  font-size:13px;
-}
-
-
-/* =========================================================
-   04｜中央播放線
-   ========================================================= */
-
-.playhead{
-  position:absolute;
-  left:50%;
-  top:42px;
-  bottom:0;
-  width:3px;
-  background:#fff;
-  z-index:40;
-  pointer-events:none;
-  box-shadow:0 0 4px #000;
-}
-
-.playhead::before{
-  content:"";
-  position:absolute;
-  top:-6px;
-  left:-5px;
-  width:13px;
-  height:13px;
-  border-radius:50%;
-  background:#fff;
-}
-
-
-/* =========================================================
-   05｜沒有素材
-   ========================================================= */
-
-.empty-timeline{
-  position:absolute;
-  left:0;
-  right:0;
-  top:120px;
-  text-align:center;
-  color:#777d8b;
-  font-size:14px;
-  line-height:1.8;
-  z-index:2;
-}
-
-
-/* =========================================================
-   06｜音訊片段
-   ========================================================= */
-
-.clip{
-  position:absolute;
-  height:60px;
-  min-width:34px;
-  border:2px solid transparent;
-  border-radius:8px;
-  overflow:hidden;
-  user-select:none;
-  touch-action:none;
-  cursor:grab;
-}
-
-.clip.music{
-  background:var(--music);
-}
-
-.clip.splice{
-  background:var(--splice);
-}
-
-.clip.effect{
-  background:var(--effect);
-}
-
-.clip.selected{
-  border-color:#fff;
-  box-shadow:0 0 0 2px var(--pink);
-}
-
-.clip.dragging{
-  opacity:.88;
-  cursor:grabbing;
-  z-index:30;
-}
-
-.clip-title{
-  position:absolute;
-  left:17px;
-  right:17px;
-  top:4px;
-  z-index:5;
-  font-size:12px;
-  font-weight:800;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  text-shadow:0 1px 2px #000;
-}
-
-
-/* =========================================================
-   07｜真正高低波形
-   ========================================================= */
-
-.wave-canvas{
-  position:absolute;
-  left:13px;
-  right:13px;
-  top:21px;
-  width:calc(100% - 26px);
-  height:34px;
-  pointer-events:none;
-}
-
-
-/* =========================================================
-   08｜左右裁切把手
-   ========================================================= */
-
-.trim-handle{
-  position:absolute;
-  top:0;
-  bottom:0;
-  width:12px;
-  background:#fff;
-  z-index:12;
-  cursor:ew-resize;
-  touch-action:none;
-}
-
-.trim-handle.left{
-  left:0;
-  border-radius:6px 0 0 6px;
-}
-
-.trim-handle.right{
-  right:0;
-  border-radius:0 6px 6px 0;
-}
-
-.trim-handle::after{
-  content:"";
-  position:absolute;
-  top:22px;
-  left:4px;
-  width:4px;
-  height:16px;
-  border-radius:4px;
-  background:#aaa;
-}
-
-
-/* =========================================================
-   09｜靜音紅色 X
-   ========================================================= */
-
-.mute-mark{
-  position:absolute;
-  inset:0;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  color:var(--danger);
-  font-size:36px;
-  font-weight:900;
-  text-shadow:0 2px 4px #000;
-  z-index:10;
-  pointer-events:none;
-}
-
-.clip.muted .mute-mark{
-  display:flex;
-}
-
-
-/* =========================================================
-   10｜素材入口
-   ========================================================= */
-
-.material-bar{
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  padding:10px 12px;
-  background:#181a20;
-  border-bottom:1px solid var(--line);
-}
-
-.material-btn{
-  min-width:120px;
-  border:0;
-  border-radius:10px;
-  padding:12px 16px;
-  background:#2b2e37;
-  color:#fff;
-  font-weight:800;
-  font-size:15px;
-}
-
-.select-tip{
-  text-align:center;
-  padding:7px;
-  background:#22242b;
-  color:#afb3bf;
-  font-size:12px;
-}
-
-
-/* =========================================================
-   11｜工具列
-   ========================================================= */
+  flex:1 0 auto;min-width:max-content;
+  border:0;border-radius:9px;padding:10px 11px;
+  background:#2b303a;color:#fff;font-size:12px;font-weight:800;white-space:nowrap;
+}
+.top-btn.finish{background:var(--pink)}
+
+/* ===== 標題 ===== */
+.editor-head{padding:11px 10px 9px;text-align:center;background:#0a0c10;border-bottom:1px solid #272b34}
+.editor-head .title{font-size:18px;font-weight:900}
+.editor-head .sub{margin-top:3px;color:#7f8796;font-size:11px}
+
+/* ===== 手機播放控制列 ===== */
+.transport{
+  display:flex;align-items:center;gap:6px;padding:8px 8px;
+  background:#161920;border-bottom:1px solid var(--line);
+}
+.time-readout{flex:1;min-width:0;font-variant-numeric:tabular-nums;font-weight:900;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.transport-btn{
+  width:39px;height:39px;flex:0 0 39px;border:0;border-radius:9px;background:#2d323d;color:#fff;font-size:17px;font-weight:900
+}
+.transport-btn.play{background:#fff;color:#111;border-radius:50%}
+
+/* ===== 時間軸 ===== */
+.timeline-shell{position:relative;height:375px;background:#11141a;border-bottom:1px solid var(--line);overflow:hidden}
+.timeline-scroll{position:relative;width:100%;height:100%;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.timeline-content{position:relative;min-width:100%;min-height:100%}
+.ruler{position:absolute;left:0;top:0;width:100%;height:var(--ruler-h);background:#171a21;border-bottom:1px solid #333844;z-index:4}
+.ruler-mark{position:absolute;top:0;height:var(--ruler-h);border-left:1px solid #464c59;color:#aeb4c1;font-size:10px;padding:5px 0 0 3px;white-space:nowrap}
+.ruler-mark.minor{color:#68707f;font-size:0;height:12px;top:26px}
+.tracks-bg{position:absolute;left:0;top:var(--ruler-h);right:0}
+.track-row{position:absolute;left:0;right:0;height:var(--track-h);border-bottom:1px solid #292e38;background:rgba(255,255,255,.012)}
+.clips-layer{position:absolute;inset:0;z-index:8}
+.beats-layer{position:absolute;left:0;top:var(--ruler-h);right:0;bottom:0;z-index:6;pointer-events:none}
+.beat-line{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,212,71,.75)}
+.beat-line::before{content:"🚩";position:absolute;top:1px;left:-8px;font-size:13px}
+.fixed-playhead{position:absolute;left:50%;top:var(--ruler-h);bottom:0;width:3px;background:#fff;z-index:50;pointer-events:none;box-shadow:0 0 5px #000}
+.fixed-playhead::before{content:"";position:absolute;top:-5px;left:-5px;width:13px;height:13px;border-radius:3px 3px 8px 8px;background:#fff}
+.empty-timeline{position:absolute;left:14px;right:14px;top:104px;text-align:center;color:#747c8b;font-size:13px;line-height:1.75;z-index:2}
+
+/* ===== 片段 ===== */
+.clip{position:absolute;height:58px;min-width:32px;border:2px solid transparent;border-radius:7px;overflow:hidden;user-select:none;touch-action:none;cursor:grab}
+.clip.music{background:var(--music)}
+.clip.splice{background:var(--splice)}
+.clip.effect{background:var(--effect)}
+.clip.selected{border-color:#fff;box-shadow:0 0 0 2px var(--pink)}
+.clip.dragging{opacity:.88;z-index:35;cursor:grabbing}
+.clip-title{position:absolute;left:16px;right:16px;top:3px;z-index:5;font-size:10px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px #000}
+.wave-canvas{position:absolute;left:12px;right:12px;top:18px;width:calc(100% - 24px);height:35px;pointer-events:none}
+.trim-handle{position:absolute;top:0;bottom:0;width:12px;background:#fff;z-index:12;cursor:ew-resize;touch-action:none}
+.trim-handle.left{left:0;border-radius:5px 0 0 5px}
+.trim-handle.right{right:0;border-radius:0 5px 5px 0}
+.trim-handle::after{content:"";position:absolute;left:4px;top:21px;width:4px;height:15px;border-radius:4px;background:#aab0bb}
+.mute-mark{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:var(--danger);font-size:34px;font-weight:1000;text-shadow:0 2px 4px #000;z-index:10;pointer-events:none}
+.clip.muted .mute-mark{display:flex}
+
+/* ===== 素材入口 ===== */
+.material-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:9px 9px;background:#181b22;border-bottom:1px solid var(--line)}
+.material-btn{border:0;border-radius:9px;padding:11px 6px;background:#2b303a;color:#fff;font-size:13px;font-weight:900}
+
+/* ===== 下方手機工具列，橫向滑 ===== */
+.tool-dock{background:#1d2027;border-top:1px solid #2e333d;padding:7px 6px calc(7px + env(safe-area-inset-bottom));overflow-x:auto;white-space:nowrap;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tool-dock::-webkit-scrollbar{display:none}
+.tool-btn{display:inline-flex;vertical-align:top;min-width:70px;height:62px;margin-right:4px;border:0;border-radius:8px;background:transparent;color:#fff;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.tool-btn .ico{font-size:21px;line-height:1}
+.tool-btn .txt{font-size:11px;font-weight:800}
+.tool-btn:disabled{opacity:.28}
+
+/* ===== Modal ===== */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.76);z-index:300;display:none;align-items:flex-end;justify-content:center}
+.modal-backdrop.show{display:flex}
+.modal{width:100%;max-height:88vh;background:#20242c;border-radius:18px 18px 0 0;border:1px solid #3d4350;overflow:hidden;display:flex;flex-direction:column}
+.modal-head{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:13px 14px;background:#20242c;border-bottom:1px solid #373c48}
+.modal-title{font-size:17px;font-weight:1000}
+.modal-close{width:36px;height:36px;border:0;border-radius:50%;background:#343945;color:#fff;font-size:20px}
+.modal-body{overflow:auto;padding:12px 12px calc(18px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+.panel-note{font-size:11px;color:#9ea5b4;line-height:1.6;margin-bottom:10px}
+
+/* ===== 素材卡 ===== */
+.material-list{display:grid;gap:8px}
+.material-card{display:grid;grid-template-columns:1fr auto auto;gap:7px;align-items:center;padding:10px;border-radius:11px;background:#2a2e37}
+.material-info{min-width:0}
+.material-name{font-size:13px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.material-type{margin-top:3px;font-size:10px;color:#a6adba}
+.material-card audio{grid-column:1/-1;width:100%;height:34px}
+.mark-btn,.use-btn,.row-btn,.primary-btn{border:0;border-radius:8px;padding:9px 11px;background:#3a3f4a;color:#fff;font-weight:900;font-size:12px}
+.use-btn,.primary-btn{background:var(--pink)}
+.mark-btn.music.on{color:#ff557b}
+.mark-btn.splice.on{color:#c5afff}
+.mark-btn.effect.on{color:#ffd447}
+
+/* ===== 草稿 / 成品 ===== */
+.list-row{padding:11px;margin-bottom:8px;border-radius:10px;background:#2a2e37}
+.list-name{font-weight:900;font-size:13px;word-break:break-word}
+.list-meta{margin-top:4px;color:#9ea5b4;font-size:10px}
+.list-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.list-row audio{width:100%;margin-top:8px}
+.form-group{margin-bottom:13px}
+.form-group label{display:block;margin-bottom:6px;color:#d2d5dc;font-size:12px}
+.form-group input,.form-group select{width:100%;padding:10px;border-radius:8px;border:1px solid #454b58;background:#15181e;color:#fff}
+
+/* ===== Toast ===== */
+.toast{position:fixed;left:50%;bottom:calc(82px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9999;display:none;max-width:88vw;padding:10px 15px;border-radius:22px;background:rgba(0,0,0,.94);color:#fff;font-size:12px;text-align:center}
 
-.tool-area{
-  padding:11px 12px 14px;
-  background:#22242b;
+@media(min-width:700px){
+  body{max-width:520px;margin:0 auto;border-left:1px solid #232832;border-right:1px solid #232832}
+  .app-top{max-width:520px;margin:0 auto}
 }
-
-.tool-row{
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:8px;
-}
-
-.tool-btn{
-  min-width:101px;
-  border:0;
-  border-radius:10px;
-  padding:8px 9px;
-  background:#333640;
-  color:#fff;
-}
-
-.tool-btn:disabled{
-  opacity:.28;
-  cursor:default;
-}
-
-.tool-icon{
-  display:block;
-  font-size:20px;
-}
-
-.tool-name{
-  display:block;
-  margin-top:3px;
-  font-size:13px;
-  font-weight:800;
-}
-
-.tool-desc{
-  display:block;
-  margin-top:2px;
-  color:#aaa;
-  font-size:10px;
-}
-
-
-/* =========================================================
-   12｜彈出視窗
-   ========================================================= */
-
-.modal-backdrop{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.75);
-  z-index:200;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  padding:16px;
-}
-
-.modal-backdrop.show{
-  display:flex;
-}
-
-.modal{
-  width:min(820px,96vw);
-  max-height:88vh;
-  overflow:auto;
-  background:#20232a;
-  border:1px solid #424650;
-  border-radius:14px;
-}
-
-.modal-head{
-  position:sticky;
-  top:0;
-  z-index:3;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:13px 15px;
-  background:#20232a;
-  border-bottom:1px solid #3a3e48;
-}
-
-.modal-title{
-  font-size:18px;
-  font-weight:900;
-}
-
-.modal-close{
-  width:36px;
-  height:36px;
-  border:0;
-  border-radius:50%;
-  background:#343842;
-  color:#fff;
-  font-size:20px;
-}
-
-.modal-body{
-  padding:13px 15px 18px;
-}
-
-
-/* =========================================================
-   13｜素材面板
-   ========================================================= */
-
-.material-note,
-.storage-note{
-  font-size:12px;
-  color:#9da2ae;
-  line-height:1.6;
-  margin-bottom:12px;
-}
-
-.material-list{
-  display:grid;
-  gap:9px;
-}
-
-.material-card{
-  display:grid;
-  grid-template-columns:
-    minmax(160px,1fr)
-    minmax(180px,320px)
-    auto
-    auto;
-  gap:9px;
-  align-items:center;
-  padding:10px;
-  border-radius:10px;
-  background:#2a2d35;
-}
-
-.material-name{
-  font-weight:800;
-  word-break:break-word;
-}
-
-.material-sub{
-  font-size:11px;
-  color:#a9adba;
-  margin-top:3px;
-}
-
-.material-card audio{
-  width:100%;
-  height:36px;
-}
-
-.mark-btn,
-.use-btn,
-.row-btn{
-  border:0;
-  border-radius:8px;
-  padding:9px 11px;
-  background:#3a3e48;
-  color:#fff;
-  font-weight:800;
-}
-
-.use-btn{
-  background:var(--pink);
-}
-
-.mark-btn.music.on{
-  color:#ff587d;
-}
-
-.mark-btn.splice.on{
-  color:#b69cff;
-}
-
-.mark-btn.effect.on{
-  color:#ffd447;
-}
-
-
-/* =========================================================
-   14｜草稿 / 成品列表
-   ========================================================= */
-
-.list-row{
-  display:flex;
-  gap:10px;
-  align-items:center;
-  flex-wrap:wrap;
-  padding:11px;
-  margin-bottom:9px;
-  border-radius:10px;
-  background:#2a2d35;
-}
-
-.list-info{
-  flex:1;
-  min-width:190px;
-}
-
-.list-name{
-  font-weight:900;
-}
-
-.list-meta{
-  font-size:11px;
-  color:#a9adba;
-  margin-top:4px;
-}
-
-.list-row audio{
-  width:100%;
-  margin-top:7px;
-}
-
-
-/* =========================================================
-   15｜設定
-   ========================================================= */
-
-.form-group{
-  margin-bottom:13px;
-}
-
-.form-group label{
-  display:block;
-  margin-bottom:6px;
-  color:#c9ccd4;
-  font-size:13px;
-}
-
-.form-group input,
-.form-group select{
-  width:100%;
-  padding:10px;
-  border-radius:8px;
-  border:1px solid #454a56;
-  background:#15171c;
-  color:#fff;
-}
-
-.primary-btn{
-  border:0;
-  border-radius:9px;
-  padding:10px 14px;
-  background:var(--pink);
-  color:#fff;
-  font-weight:900;
-}
-
-
-/* =========================================================
-   16｜提示
-   ========================================================= */
-
-.toast{
-  position:fixed;
-  left:50%;
-  bottom:25px;
-  transform:translateX(-50%);
-  z-index:9999;
-  display:none;
-  padding:11px 17px;
-  border-radius:22px;
-  background:rgba(0,0,0,.93);
-  color:#fff;
-  font-size:14px;
-}
-
-
-/* =========================================================
-   17｜手機
-   ========================================================= */
-
-@media(max-width:700px){
-
-  .main-top-row{
-    justify-content:flex-start;
-    padding:9px 8px;
-  }
-
-  .main-top-row .top-btn{
-    padding:9px 10px;
-    font-size:12px;
-  }
-
-  .timeline-shell{
-    height:360px;
-  }
-
-  .material-btn{
-    min-width:95px;
-    padding:11px 8px;
-  }
-
-  .tool-btn{
-    min-width:90px;
-  }
-
-  .material-card{
-    grid-template-columns:1fr auto;
-  }
-
-  .material-card audio{
-    grid-column:1/-1;
-  }
-
-  .material-card .use-btn{
-    grid-column:2;
-  }
-
-  .editor-title{
-    padding:13px 8px;
-  }
-
-}
-
 </style>
 </head>
-
 <body>
 
-
-<!-- =========================================================
-     最上方功能列
-     ========================================================= -->
-
-<div class="top-shell">
-
-  <div class="main-top-row">
-
-    <button
-      id="backBtn"
-      class="top-btn"
-    >
-      ← 回音樂素材
-    </button>
-
-    <button
-      id="uploadBtn"
-      class="top-btn"
-    >
-      ⬆️ 上傳音樂
-    </button>
-
-    <button
-      id="draftsBtn"
-      class="top-btn"
-    >
-      📝 草稿
-    </button>
-
-    <button
-      id="productsBtn"
-      class="top-btn"
-    >
-      🎵 成品
-    </button>
-
-    <button
-      id="finishBtn"
-      class="top-btn finish-btn"
-    >
-      ✅ 完成
-    </button>
-
+<!-- 最上方 5 顆 -->
+<header class="app-top">
+  <div class="top-row">
+    <button id="backBtn" class="top-btn">← 回音樂素材</button>
+    <button id="uploadBtn" class="top-btn">⬆️ 上傳音樂</button>
+    <button id="draftsBtn" class="top-btn">📝 草稿</button>
+    <button id="productsBtn" class="top-btn">🎵 成品</button>
+    <button id="finishBtn" class="top-btn finish">✅ 完成</button>
   </div>
+</header>
 
-</div>
+<input id="uploadInput" type="file" accept="audio/*" multiple hidden>
 
-
-<!-- 只有上傳音樂會從手機 / 電腦找檔案 -->
-
-<input
-  id="uploadInput"
-  type="file"
-  accept="audio/*"
-  multiple
-  hidden
->
-
-
-<!-- =========================================================
-     標題
-     ========================================================= -->
-
-<section class="editor-title">
-
-  <div class="icon">
-    🎧
-  </div>
-
-  <h1>
-    自由品勢音樂剪輯
-  </h1>
-
-  <p>
-    真實波形｜動態多軌｜自由拖曳｜左右裁切
-  </p>
-
+<section class="editor-head">
+  <div class="title">🎧 自由品勢音樂剪輯</div>
+  <div class="sub">手機版｜真正波形｜動態多軌｜自由拖曳</div>
 </section>
 
+<!-- 手機播放控制 -->
+<section class="transport">
+  <div id="timeReadout" class="time-readout">00:00.0 / 00:00.0</div>
+  <button id="playBtn" class="transport-btn play" title="播放">▶</button>
+  <button id="undoBtn" class="transport-btn" title="回上一步">↶</button>
+  <button id="redoBtn" class="transport-btn" title="重做">↷</button>
+  <button id="fullscreenBtn" class="transport-btn" title="全螢幕">⛶</button>
+</section>
 
-<!-- =========================================================
-     時間軸
-     ========================================================= -->
-
-<section
-  class="timeline-shell"
-  id="timelineShell"
->
-
-  <div
-    id="timelineScroll"
-    class="timeline-scroll"
-  >
-
-    <div
-      id="timelineContent"
-      class="timeline-content"
-    >
-
-      <div
-        id="ruler"
-        class="ruler"
-      ></div>
-
-      <div
-        id="tracksBg"
-        class="tracks-bg"
-      ></div>
-
-      <div
-        id="beatsLayer"
-        class="beats-layer"
-      ></div>
-
-      <div
-        id="clipsLayer"
-        class="clips-layer"
-      ></div>
-
-      <div
-        id="emptyTimeline"
-        class="empty-timeline"
-      >
-
-        還沒有素材
-        <br>
-
-        按「🎵 音樂／✂️ 拼接／🔊 音效」
-        從我們的素材庫加入
-
-        <br>
-
-        或用「⬆️ 上傳音樂」
-        加入自己的音樂
-
+<!-- 時間軸 -->
+<section id="timelineShell" class="timeline-shell">
+  <div id="timelineScroll" class="timeline-scroll">
+    <div id="timelineContent" class="timeline-content">
+      <div id="ruler" class="ruler"></div>
+      <div id="tracksBg" class="tracks-bg"></div>
+      <div id="beatsLayer" class="beats-layer"></div>
+      <div id="clipsLayer" class="clips-layer"></div>
+      <div id="emptyTimeline" class="empty-timeline">
+        還沒有素材<br>
+        按「🎵 音樂／✂️ 拼接／🔊 音效」從素材庫加入<br>
+        或按「⬆️ 上傳音樂」加入手機裡自己的音樂
       </div>
-
     </div>
-
   </div>
-
-  <div class="playhead"></div>
-
+  <div class="fixed-playhead"></div>
 </section>
 
-
-<!-- =========================================================
-     我們自己的素材庫
-     ========================================================= -->
-
-<section class="material-bar">
-
-  <button
-    class="material-btn"
-    data-type="music"
-  >
-    🎵 音樂
-  </button>
-
-  <button
-    class="material-btn"
-    data-type="splice"
-  >
-    ✂️ 拼接
-  </button>
-
-  <button
-    class="material-btn"
-    data-type="effect"
-  >
-    🔊 音效
-  </button>
-
+<!-- 素材入口 -->
+<section class="material-tabs">
+  <button class="material-btn" data-type="music">🎵 音樂</button>
+  <button class="material-btn" data-type="splice">✂️ 拼接</button>
+  <button class="material-btn" data-type="effect">🔊 音效</button>
 </section>
 
-
-<div
-  id="selectTip"
-  class="select-tip"
->
-  請先點選時間軸上的一段素材
-</div>
-
-
-<!-- =========================================================
-     工具
-     ========================================================= -->
-
-<section class="tool-area">
-
-  <div class="tool-row">
-
-    <button
-      id="playBtn"
-      class="tool-btn"
-    >
-      <span class="tool-icon">▶</span>
-      <span class="tool-name">播放</span>
-      <span class="tool-desc">播放剪輯內容</span>
-    </button>
-
-    <button
-      id="undoBtn"
-      class="tool-btn"
-    >
-      <span class="tool-icon">↶</span>
-      <span class="tool-name">回上一步</span>
-      <span class="tool-desc">回到前一個動作</span>
-    </button>
-
-    <button
-      id="redoBtn"
-      class="tool-btn"
-    >
-      <span class="tool-icon">↷</span>
-      <span class="tool-name">重做</span>
-      <span class="tool-desc">回復剛才動作</span>
-    </button>
-
-    <button
-      id="beatBtn"
-      class="tool-btn"
-    >
-      <span class="tool-icon">🚩</span>
-      <span class="tool-name">節拍</span>
-      <span class="tool-desc">播放線加標記</span>
-    </button>
-
-    <button
-      id="splitBtn"
-      class="tool-btn need-clip"
-      disabled
-    >
-      <span class="tool-icon">✂️</span>
-      <span class="tool-name">分割</span>
-      <span class="tool-desc">從播放線切開</span>
-    </button>
-
-    <button
-      id="deleteBtn"
-      class="tool-btn need-clip"
-      disabled
-    >
-      <span class="tool-icon">🗑️</span>
-      <span class="tool-name">刪除</span>
-      <span class="tool-desc">刪除選取片段</span>
-    </button>
-
-    <button
-      id="volumeBtn"
-      class="tool-btn need-clip"
-      disabled
-    >
-      <span class="tool-icon">🔊</span>
-      <span class="tool-name">音量</span>
-      <span class="tool-desc">個別調整音量</span>
-    </button>
-
-    <button
-      id="fadeBtn"
-      class="tool-btn need-clip"
-      disabled
-    >
-      <span class="tool-icon">◐</span>
-      <span class="tool-name">淡入淡出</span>
-      <span class="tool-desc">設定進退時間</span>
-    </button>
-
-    <button
-      id="copyBtn"
-      class="tool-btn need-clip"
-      disabled
-    >
-      <span class="tool-icon">⧉</span>
-      <span class="tool-name">複製</span>
-      <span class="tool-desc">複製這一段</span>
-    </button>
-
-    <button
-      id="speedBtn"
-      class="tool-btn need-clip"
-      disabled
-    >
-      <span class="tool-icon">⏱️</span>
-      <span class="tool-name">變速</span>
-      <span class="tool-desc">加快或放慢</span>
-    </button>
-
-    <button
-      id="muteBtn"
-      class="tool-btn need-clip"
-      disabled
-    >
-      <span class="tool-icon">🔇</span>
-      <span class="tool-name">靜音</span>
-      <span class="tool-desc">這一段不出聲</span>
-    </button>
-
-  </div>
-
+<!-- 下方工具列 -->
+<section class="tool-dock">
+  <button id="volumeBtn" class="tool-btn need-clip" disabled><span class="ico">🔊</span><span class="txt">音量</span></button>
+  <button id="fadeBtn" class="tool-btn need-clip" disabled><span class="ico">◐</span><span class="txt">淡入淡出</span></button>
+  <button id="splitBtn" class="tool-btn need-clip" disabled><span class="ico">✂️</span><span class="txt">分割</span></button>
+  <button id="deleteBtn" class="tool-btn need-clip" disabled><span class="ico">🗑️</span><span class="txt">刪除</span></button>
+  <button id="copyBtn" class="tool-btn need-clip" disabled><span class="ico">⧉</span><span class="txt">複製</span></button>
+  <button id="speedBtn" class="tool-btn need-clip" disabled><span class="ico">⏱️</span><span class="txt">變速</span></button>
+  <button id="muteBtn" class="tool-btn need-clip" disabled><span class="ico">🔇</span><span class="txt">靜音</span></button>
+  <button id="beatBtn" class="tool-btn"><span class="ico">🚩</span><span class="txt">節拍</span></button>
 </section>
 
-
-<!-- =========================================================
-     彈出視窗
-     ========================================================= -->
-
-<div
-  id="modalBackdrop"
-  class="modal-backdrop"
->
-
+<!-- Modal -->
+<div id="modalBackdrop" class="modal-backdrop">
   <div class="modal">
-
     <div class="modal-head">
-
-      <div
-        id="modalTitle"
-        class="modal-title"
-      ></div>
-
-      <button
-        id="modalClose"
-        class="modal-close"
-      >
-        ×
-      </button>
-
+      <div id="modalTitle" class="modal-title"></div>
+      <button id="modalClose" class="modal-close">×</button>
     </div>
-
-    <div
-      id="modalBody"
-      class="modal-body"
-    ></div>
-
+    <div id="modalBody" class="modal-body"></div>
   </div>
-
 </div>
 
-
-<div
-  id="toast"
-  class="toast"
-></div>
-
+<div id="toast" class="toast"></div>
 
 <script>
-
 /* =========================================================
-   01｜固定設定
+   固定設定
    ========================================================= */
-
-const LIBRARY_BASE =
-  "https://13579jo.github.io/taekwondo-music-library/";
-
-const PPS = 16;
-const RULER_H = 42;
-const TRACK_H = 72;
+const LIBRARY_BASE = "https://13579jo.github.io/taekwondo-music-library/";
+const REPO_TREE_API = "https://api.github.com/repos/13579jo/taekwondo-music-library/git/trees/main?recursive=1";
+const PPS = 46;              // 手機版每秒 46px，像剪映每秒清楚可見
+const RULER_H = 38;
+const TRACK_H = 70;
 const MIN_CLIP = 0.20;
 const DEFAULT_DURATION = 100;
-
-const AudioContextClass =
-  window.AudioContext ||
-  window.webkitAudioContext;
-
-const audioContext =
-  new AudioContextClass();
-
+const AUDIO_EXT = /\.(mp3|wav|m4a|aac|ogg|flac)$/i;
+const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+const audioContext = new AudioContextClass();
 
 /* =========================================================
-   02｜我們自己的素材庫
+   編輯資料
    ========================================================= */
-
-const MATERIALS = {
-
-  music:
-
-    [1,2,3,4]
-
-    .map(
-      i => ({
-
-        id:
-          `music${String(i).padStart(2,"0")}`,
-
-        type:
-          "music",
-
-        title:
-          `音樂 ${String(i).padStart(2,"0")}`,
-
-        url:
-          `${LIBRARY_BASE}music${String(i).padStart(2,"0")}.mp3`
-
-      })
-    ),
-
-
-  splice:
-
-    Array
-      .from(
-        {length:62},
-        (_,n)=>n+1
-      )
-
-      .map(
-        i => ({
-
-          id:
-            `splice${String(i).padStart(2,"0")}`,
-
-          type:
-            "splice",
-
-          title:
-            `拼接 ${String(i).padStart(2,"0")}`,
-
-          url:
-            `${LIBRARY_BASE}拼接素材/${i}_拼接素材.mp3`
-
-        })
-      ),
-
-
-  effect:
-
-    Array
-      .from(
-        {length:40},
-        (_,n)=>n+1
-      )
-
-      .map(
-        i => ({
-
-          id:
-            `effect${String(i).padStart(2,"0")}`,
-
-          type:
-            "effect",
-
-          title:
-            `音效 ${String(i).padStart(2,"0")}`,
-
-          url:
-            `${LIBRARY_BASE}effect${String(i).padStart(2,"0")}.${i<=20?"wav":"mp3"}`
-
-        })
-      )
-
-};
-
-
-/* =========================================================
-   03｜剪輯資料
-   ========================================================= */
-
 let clips = [];
 let beats = [];
 let assets = new Map();
-
 let selectedClipId = null;
-
 let undoStack = [];
 let redoStack = [];
-
 let isPlaying = false;
 let activeSources = [];
-
 let playRAF = 0;
-
 let playStartCtx = 0;
 let playStartTimeline = 0;
-
-
-/* =========================================================
-   04｜畫面元素
-   ========================================================= */
-
-const timelineShell =
-  document.getElementById("timelineShell");
-
-const timelineScroll =
-  document.getElementById("timelineScroll");
-
-const timelineContent =
-  document.getElementById("timelineContent");
-
-const ruler =
-  document.getElementById("ruler");
-
-const tracksBg =
-  document.getElementById("tracksBg");
-
-const beatsLayer =
-  document.getElementById("beatsLayer");
-
-const clipsLayer =
-  document.getElementById("clipsLayer");
-
-const emptyTimeline =
-  document.getElementById("emptyTimeline");
-
-const selectTip =
-  document.getElementById("selectTip");
-
-const uploadInput =
-  document.getElementById("uploadInput");
-
+let libraryManifest = null;
+let libraryManifestPromise = null;
 
 /* =========================================================
-   05｜上方五個按鈕
+   DOM
    ========================================================= */
-
-document
-  .getElementById("backBtn")
-  .addEventListener(
-    "click",
-    () => {
-
-      location.href =
-        LIBRARY_BASE;
-
-    }
-  );
-
-
-document
-  .getElementById("uploadBtn")
-  .addEventListener(
-    "click",
-    () => {
-
-      uploadInput.click();
-
-    }
-  );
-
-
-document
-  .getElementById("draftsBtn")
-  .addEventListener(
-    "click",
-    showDrafts
-  );
-
-
-document
-  .getElementById("productsBtn")
-  .addEventListener(
-    "click",
-    showProducts
-  );
-
-
-document
-  .getElementById("finishBtn")
-  .addEventListener(
-    "click",
-    finishProject
-  );
-
+const timelineShell = document.getElementById("timelineShell");
+const timelineScroll = document.getElementById("timelineScroll");
+const timelineContent = document.getElementById("timelineContent");
+const ruler = document.getElementById("ruler");
+const tracksBg = document.getElementById("tracksBg");
+const beatsLayer = document.getElementById("beatsLayer");
+const clipsLayer = document.getElementById("clipsLayer");
+const emptyTimeline = document.getElementById("emptyTimeline");
+const timeReadout = document.getElementById("timeReadout");
+const uploadInput = document.getElementById("uploadInput");
 
 /* =========================================================
-   06｜自己的音樂
-   只有上傳音樂才讀手機／電腦
+   上方 5 顆
    ========================================================= */
-
-uploadInput
-  .addEventListener(
-    "change",
-    async e => {
-
-      const files =
-        [...e.target.files];
-
-      if(files.length){
-
-        await addUploadedFiles(
-          files
-        );
-
-      }
-
-      e.target.value = "";
-
-    }
-  );
-
+document.getElementById("backBtn").addEventListener("click",()=>location.href=LIBRARY_BASE);
+document.getElementById("uploadBtn").addEventListener("click",()=>uploadInput.click());
+document.getElementById("draftsBtn").addEventListener("click",showDrafts);
+document.getElementById("productsBtn").addEventListener("click",showProducts);
+document.getElementById("finishBtn").addEventListener("click",finishProject);
 
 /* =========================================================
-   07｜音樂 / 拼接 / 音效
-   只讀我們自己的素材庫
+   播放控制
    ========================================================= */
-
-document
-  .querySelectorAll(".material-btn")
-  .forEach(
-    btn => {
-
-      btn.addEventListener(
-        "click",
-        () => {
-
-          openMaterialPanel(
-            btn.dataset.type
-          );
-
-        }
-      );
-
-    }
-  );
-
+document.getElementById("playBtn").addEventListener("click",togglePlay);
+document.getElementById("undoBtn").addEventListener("click",undoAction);
+document.getElementById("redoBtn").addEventListener("click",redoAction);
+document.getElementById("fullscreenBtn").addEventListener("click",toggleFullscreen);
 
 /* =========================================================
-   08｜標記
+   下方工具
    ========================================================= */
-
-function favoriteKey(id){
-
-  return "favorite_" + id;
-
-}
-
-function isMarked(id){
-
-  return (
-    localStorage.getItem(
-      favoriteKey(id)
-    ) === "true"
-  );
-
-}
-
-function toggleMarked(id){
-
-  localStorage.setItem(
-
-    favoriteKey(id),
-
-    isMarked(id)
-      ? "false"
-      : "true"
-
-  );
-
-}
-
+document.getElementById("volumeBtn").addEventListener("click",editVolume);
+document.getElementById("fadeBtn").addEventListener("click",editFade);
+document.getElementById("splitBtn").addEventListener("click",splitSelected);
+document.getElementById("deleteBtn").addEventListener("click",deleteSelected);
+document.getElementById("copyBtn").addEventListener("click",copySelected);
+document.getElementById("speedBtn").addEventListener("click",editSpeed);
+document.getElementById("muteBtn").addEventListener("click",toggleMute);
+document.getElementById("beatBtn").addEventListener("click",addBeat);
 
 /* =========================================================
-   09｜素材面板
+   自己上傳音樂：只有這裡會開手機檔案
    ========================================================= */
-
-function openMaterialPanel(type){
-
-  const names = {
-
-    music:"🎵 音樂",
-
-    splice:"✂️ 拼接",
-
-    effect:"🔊 音效"
-
-  };
-
-
-  const list =
-
-    [...MATERIALS[type]]
-
-    .sort(
-      (a,b) =>
-        Number(isMarked(b.id)) -
-        Number(isMarked(a.id))
-    );
-
-
-  openModal(
-
-    names[type],
-
-    `
-
-    <div class="material-note">
-
-      這裡讀的是我們自己的
-      「自由品勢音樂與音效素材庫」。
-
-      <br>
-
-      按「使用」才會加入時間軸。
-
-    </div>
-
-    <div class="material-list">
-
-      ${list.map(materialCardHTML).join("")}
-
-    </div>
-
-    `
-
-  );
-
-
-  bindMaterialPanel(
-    type
-  );
-
-}
-
+uploadInput.addEventListener("change",async e=>{
+  const files=[...e.target.files];
+  e.target.value="";
+  if(files.length) await addUploadedFiles(files);
+});
 
 /* =========================================================
-   10｜素材卡片
+   素材庫三入口：永遠讀我們自己的素材庫
    ========================================================= */
-
-function materialCardHTML(m){
-
-  const marked =
-    isMarked(m.id);
-
-
-  const symbol =
-
-    m.type === "music"
-
-      ? (
-          marked
-            ? "♥"
-            : "♡"
-        )
-
-      : m.type === "effect"
-
-        ? (
-            marked
-              ? "★"
-              : "☆"
-          )
-
-        : "✂";
-
-
-  return `
-
-  <div
-    class="material-card"
-    data-material-id="${m.id}"
-  >
-
-    <div>
-
-      <div class="material-name">
-        ${escapeHtml(m.title)}
-      </div>
-
-      <div class="material-sub">
-
-        ${
-          m.type === "music"
-            ? "音樂"
-            : m.type === "splice"
-              ? "拼接"
-              : "音效"
-        }
-
-      </div>
-
-    </div>
-
-    <audio
-      controls
-      preload="none"
-      src="${m.url}"
-    ></audio>
-
-    <button
-      class="mark-btn ${m.type} ${marked ? "on" : ""}"
-      data-mark="${m.id}"
-    >
-      ${symbol}
-    </button>
-
-    <button
-      class="use-btn"
-      data-use="${m.id}"
-    >
-      使用
-    </button>
-
-  </div>
-
-  `;
-
-}
-
+document.querySelectorAll(".material-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>openMaterialPanel(btn.dataset.type));
+});
 
 /* =========================================================
-   11｜素材按鈕
+   全螢幕
    ========================================================= */
-
-function bindMaterialPanel(type){
-
-  document
-    .querySelectorAll("[data-mark]")
-    .forEach(
-      btn => {
-
-        btn.addEventListener(
-          "click",
-          () => {
-
-            toggleMarked(
-              btn.dataset.mark
-            );
-
-            openMaterialPanel(
-              type
-            );
-
-          }
-        );
-
-      }
-    );
-
-
-  document
-    .querySelectorAll("[data-use]")
-    .forEach(
-      btn => {
-
-        btn.addEventListener(
-          "click",
-          async () => {
-
-            const m =
-              MATERIALS[type]
-                .find(
-                  x =>
-                    x.id ===
-                    btn.dataset.use
-                );
-
-            if(!m){
-              return;
-            }
-
-            btn.disabled = true;
-            btn.textContent = "加入中…";
-
-            try{
-
-              await addLibraryMaterial(
-                m
-              );
-
-              closeModal();
-
-              showToast(
-                "✅ 已加入時間軸"
-              );
-
-            }
-            catch(err){
-
-              console.error(err);
-
-              btn.disabled = false;
-              btn.textContent = "使用";
-
-              showToast(
-                "⚠️ 這個素材目前讀取不到"
-              );
-
-            }
-
-          }
-        );
-
-      }
-    );
-
-}
-
-
-/* =========================================================
-   12｜從素材庫加入
-   ========================================================= */
-
-async function addLibraryMaterial(m){
-
-  await audioContext.resume();
-
-
-  const response =
-    await fetch(
-      m.url,
-      {
-        cache:"no-store"
-      }
-    );
-
-
-  if(!response.ok){
-
-    throw new Error(
-      "HTTP " +
-      response.status
-    );
-
-  }
-
-
-  const blob =
-    await response.blob();
-
-
-  const buffer =
-    await audioContext
-      .decodeAudioData(
-        (
-          await blob.arrayBuffer()
-        )
-        .slice(0)
-      );
-
-
-  const assetId =
-    "asset_" +
-    m.id +
-    "_" +
-    Date.now();
-
-
-  assets.set(
-
-    assetId,
-
-    {
-
-      id:assetId,
-
-      name:m.title,
-
-      type:m.type,
-
-      blob:blob,
-
-      buffer:buffer,
-
-      duration:buffer.duration,
-
-      peaks:
-        createPeaks(
-          buffer,
-          5000
-        ),
-
-      sourceUrl:m.url
-
-    }
-
-  );
-
-
-  addNewClipFromAsset(
-
-    assetId,
-
-    m.title,
-
-    m.type
-
-  );
-
-}
-
-
-/* =========================================================
-   13｜自己上傳音樂
-   ========================================================= */
-
-async function addUploadedFiles(files){
-
-  pushHistory();
-
-
-  for(const file of files){
-
-    try{
-
-      showToast(
-        "正在讀取音樂波形…"
-      );
-
-
-      const buffer =
-        await audioContext
-          .decodeAudioData(
-            (
-              await file.arrayBuffer()
-            )
-            .slice(0)
-          );
-
-
-      const assetId =
-        uid("asset");
-
-
-      assets.set(
-
-        assetId,
-
-        {
-
-          id:assetId,
-
-          name:file.name,
-
-          type:"music",
-
-          blob:file,
-
-          buffer:buffer,
-
-          duration:buffer.duration,
-
-          peaks:
-            createPeaks(
-              buffer,
-              5000
-            ),
-
-          sourceUrl:null
-
-        }
-
-      );
-
-
-      addNewClipFromAsset(
-
-        assetId,
-
-        file.name,
-
-        "music",
-
-        false
-
-      );
-
-    }
-    catch(err){
-
-      console.error(err);
-
-      showToast(
-        "⚠️ 有音訊檔無法讀取"
-      );
-
-    }
-
-  }
-
-
-  normalizeTracks();
-
-  renderAll();
-
-  showToast(
-    "✅ 已加入自己的音樂"
-  );
-
-}
-
-
-/* =========================================================
-   14｜新增片段
-   ========================================================= */
-
-function addNewClipFromAsset(
-  assetId,
-  name,
-  type,
-  saveHistory=true
-){
-
-  if(saveHistory){
-
-    pushHistory();
-
-  }
-
-
-  const a =
-    assets.get(assetId);
-
-
-  if(!a){
-    return;
-  }
-
-
-  const newTrack =
-
-    clips.length
-
-      ? Math.max(
-          ...clips.map(
-            c => c.track
-          )
-        ) + 1
-
-      : 0;
-
-
-  clips.push({
-
-    id:
-      uid("clip"),
-
-    assetId:assetId,
-
-    name:name,
-
-    type:type,
-
-    track:newTrack,
-
-    start:
-      getPlayheadTime(),
-
-    trimStart:0,
-
-    trimEnd:
-      a.duration,
-
-    volume:1,
-
-    muted:false,
-
-    speed:1,
-
-    fadeIn:0,
-
-    fadeOut:0
-
-  });
-
-
-  normalizeTracks();
-
-  renderAll();
-
-}
-
-
-/* =========================================================
-   15｜分析真正波形
-   ========================================================= */
-
-function createPeaks(
-  buffer,
-  count
-){
-
-  const n =
-    Math.min(
-      count,
-      buffer.length
-    );
-
-
-  const peaks =
-    new Float32Array(n);
-
-
-  const step =
-    buffer.length / n;
-
-
-  for(
-    let i=0;
-    i<n;
-    i++
-  ){
-
-    const s =
-      Math.floor(
-        i * step
-      );
-
-
-    const e =
-      Math.min(
-        buffer.length,
-        Math.floor(
-          (i+1) *
-          step
-        )
-      );
-
-
-    let max = 0;
-
-
-    for(
-      let ch=0;
-      ch<buffer.numberOfChannels;
-      ch++
-    ){
-
-      const data =
-        buffer.getChannelData(ch);
-
-
-      for(
-        let j=s;
-        j<e;
-        j++
-      ){
-
-        const v =
-          Math.abs(data[j]);
-
-
-        if(v>max){
-
-          max = v;
-
-        }
-
-      }
-
-    }
-
-
-    peaks[i] = max;
-
-  }
-
-
-  return peaks;
-
-}
-
-
-/* =========================================================
-   16｜基本時間計算
-   ========================================================= */
-
-function clipDuration(c){
-
-  return Math.max(
-
-    MIN_CLIP,
-
-    (
-      c.trimEnd -
-      c.trimStart
-    )
-    /
-    c.speed
-
-  );
-
-}
-
-
-function clipEnd(c){
-
-  return (
-    c.start +
-    clipDuration(c)
-  );
-
-}
-
-
-function projectDuration(){
-
-  return Math.max(
-
-    0,
-
-    ...clips.map(
-      clipEnd
-    ),
-
-    ...beats,
-
-    0
-
-  );
-
-}
-
-
-function getSelected(){
-
-  return (
-    clips.find(
-      c =>
-        c.id ===
-        selectedClipId
-    )
-    ||
-    null
-  );
-
-}
-
-
-function leftPad(){
-
-  return (
-    timelineShell.clientWidth /
-    2
-  );
-
-}
-
-
-function getPlayheadTime(){
-
-  return Math.max(
-
-    0,
-
-    timelineScroll.scrollLeft /
-    PPS
-
-  );
-
-}
-
-
-function setPlayheadTime(t){
-
-  timelineScroll.scrollLeft =
-    Math.max(
-      0,
-      t *
-      PPS
-    );
-
-}
-
-
-function trackCount(){
-
-  return clips.length
-
-    ? Math.max(
-        ...clips.map(
-          c => c.track
-        )
-      ) + 1
-
-    : 0;
-
-}
-
-
-/* =========================================================
-   17｜重畫畫面
-   ========================================================= */
-
-function renderAll(){
-
-  const keep =
-    timelineScroll.scrollLeft;
-
-
-  const pad =
-    leftPad();
-
-
-  const duration =
-    Math.max(
-
-      DEFAULT_DURATION,
-
-      Math.ceil(
-        projectDuration() +
-        10
-      )
-
-    );
-
-
-  const tracks =
-    trackCount();
-
-
-  timelineContent.style.width =
-
-    (
-      pad * 2 +
-      duration * PPS
-    )
-    +
-    "px";
-
-
-  timelineContent.style.height =
-
-    (
-      RULER_H +
-      Math.max(
-        240,
-        tracks *
-        TRACK_H +
-        40
-      )
-    )
-    +
-    "px";
-
-
-  renderRuler(
-    duration,
-    pad
-  );
-
-
-  renderTracks(
-    tracks
-  );
-
-
-  renderBeats(
-    pad
-  );
-
-
-  renderClips(
-    pad
-  );
-
-
-  emptyTimeline.style.display =
-
-    clips.length
-      ? "none"
-      : "block";
-
-
-  updateToolState();
-
-
-  requestAnimationFrame(
-    () => {
-
-      timelineScroll.scrollLeft =
-        keep;
-
-    }
-  );
-
-}
-
-
-/* =========================================================
-   18｜時間刻度
-   ========================================================= */
-
-function renderRuler(
-  duration,
-  pad
-){
-
-  ruler.innerHTML = "";
-
-
-  for(
-    let t=0;
-    t<=duration;
-    t+=10
-  ){
-
-    const m =
-      document.createElement("div");
-
-
-    m.className =
-      "ruler-mark";
-
-
-    m.style.left =
-      (
-        pad +
-        t *
-        PPS
-      )
-      +
-      "px";
-
-
-    m.textContent =
-      formatTime(t);
-
-
-    ruler.appendChild(m);
-
-  }
-
-}
-
-
-/* =========================================================
-   19｜軌道
-   ========================================================= */
-
-function renderTracks(count){
-
-  tracksBg.innerHTML = "";
-
-
-  for(
-    let i=0;
-    i<count;
-    i++
-  ){
-
-    const row =
-      document.createElement("div");
-
-
-    row.className =
-      "track-row";
-
-
-    row.style.top =
-      (
-        i *
-        TRACK_H
-      )
-      +
-      "px";
-
-
-    tracksBg.appendChild(row);
-
-  }
-
-}
-
-
-/* =========================================================
-   20｜節拍
-   ========================================================= */
-
-function renderBeats(pad){
-
-  beatsLayer.innerHTML = "";
-
-
-  beats.forEach(
-    t => {
-
-      const b =
-        document.createElement("div");
-
-
-      b.className =
-        "beat-line";
-
-
-      b.style.left =
-        (
-          pad +
-          t *
-          PPS
-        )
-        +
-        "px";
-
-
-      beatsLayer.appendChild(b);
-
-    }
-  );
-
-}
-
-
-/* =========================================================
-   21｜片段
-   ========================================================= */
-
-function renderClips(pad){
-
-  clipsLayer.innerHTML = "";
-
-
-  clips.forEach(
-    c => {
-
-      const a =
-        assets.get(
-          c.assetId
-        );
-
-
-      if(!a){
-        return;
-      }
-
-
-      const el =
-        document.createElement("div");
-
-
-      el.className =
-
-        `clip ${c.type}`
-
-        +
-
-        (
-          c.id === selectedClipId
-            ? " selected"
-            : ""
-        )
-
-        +
-
-        (
-          c.muted
-            ? " muted"
-            : ""
-        );
-
-
-      el.dataset.id =
-        c.id;
-
-
-      el.style.left =
-
-        (
-          pad +
-          c.start *
-          PPS
-        )
-        +
-        "px";
-
-
-      el.style.top =
-
-        (
-          RULER_H +
-          c.track *
-          TRACK_H +
-          6
-        )
-        +
-        "px";
-
-
-      el.style.width =
-
-        Math.max(
-          34,
-          clipDuration(c) *
-          PPS
-        )
-        +
-        "px";
-
-
-      el.innerHTML = `
-
-        <div class="clip-title">
-          ${escapeHtml(c.name)}
-        </div>
-
-        <canvas class="wave-canvas"></canvas>
-
-        <div class="trim-handle left"></div>
-
-        <div class="trim-handle right"></div>
-
-        <div class="mute-mark">
-          ×
-        </div>
-
-      `;
-
-
-      clipsLayer.appendChild(el);
-
-
-      drawWave(
-
-        el.querySelector("canvas"),
-
-        c,
-
-        a
-
-      );
-
-
-      bindClipEvents(
-        el,
-        c
-      );
-
-    }
-  );
-
-}
-
-
-/* =========================================================
-   22｜畫真實波形
-   ========================================================= */
-
-function drawWave(
-  canvas,
-  c,
-  a
-){
-
-  const w =
-    Math.max(
-      1,
-      Math.floor(
-        canvas.clientWidth
-      )
-    );
-
-
-  const h =
-    Math.max(
-      1,
-      Math.floor(
-        canvas.clientHeight
-      )
-    );
-
-
-  const dpr =
-    window.devicePixelRatio ||
-    1;
-
-
-  canvas.width =
-    Math.floor(
-      w *
-      dpr
-    );
-
-
-  canvas.height =
-    Math.floor(
-      h *
-      dpr
-    );
-
-
-  const ctx =
-    canvas.getContext("2d");
-
-
-  ctx.setTransform(
-    dpr,
-    0,
-    0,
-    dpr,
-    0,
-    0
-  );
-
-
-  ctx.clearRect(
-    0,
-    0,
-    w,
-    h
-  );
-
-
-  const start =
-    Math.floor(
-
-      (
-        c.trimStart /
-        a.duration
-      )
-
-      *
-
-      a.peaks.length
-
-    );
-
-
-  const end =
-    Math.max(
-
-      start + 1,
-
-      Math.floor(
-
-        (
-          c.trimEnd /
-          a.duration
-        )
-
-        *
-
-        a.peaks.length
-
-      )
-
-    );
-
-
-  const mid =
-    h / 2;
-
-
-  ctx.beginPath();
-
-
-  for(
-    let x=0;
-    x<w;
-    x++
-  ){
-
-    const idx =
-      Math.min(
-
-        a.peaks.length - 1,
-
-        start +
-
-        Math.floor(
-
-          (
-            x /
-            Math.max(
-              1,
-              w-1
-            )
-          )
-
-          *
-
-          (
-            end -
-            start
-          )
-
-        )
-
-      );
-
-
-    const amp =
-      a.peaks[idx] ||
-      0;
-
-
-    const y =
-      amp *
-      mid *
-      .95;
-
-
-    if(x===0){
-
-      ctx.moveTo(
-        x,
-        mid-y
-      );
-
-    }
-    else{
-
-      ctx.lineTo(
-        x,
-        mid-y
-      );
-
-    }
-
-  }
-
-
-  for(
-    let x=w-1;
-    x>=0;
-    x--
-  ){
-
-    const idx =
-      Math.min(
-
-        a.peaks.length - 1,
-
-        start +
-
-        Math.floor(
-
-          (
-            x /
-            Math.max(
-              1,
-              w-1
-            )
-          )
-
-          *
-
-          (
-            end -
-            start
-          )
-
-        )
-
-      );
-
-
-    const amp =
-      a.peaks[idx] ||
-      0;
-
-
-    const y =
-      amp *
-      mid *
-      .95;
-
-
-    ctx.lineTo(
-      x,
-      mid+y
-    );
-
-  }
-
-
-  ctx.closePath();
-
-
-  ctx.fillStyle =
-    "rgba(255,255,255,.93)";
-
-
-  ctx.fill();
-
-}
-
-
-/* =========================================================
-   23｜片段操作
-   ========================================================= */
-
-function bindClipEvents(
-  el,
-  c
-){
-
-  el.addEventListener(
-    "click",
-    e => {
-
-      if(
-        e.target.classList.contains(
-          "trim-handle"
-        )
-      ){
-        return;
-      }
-
-
-      selectedClipId =
-        c.id;
-
-
-      renderAll();
-
-    }
-  );
-
-
-  el.addEventListener(
-    "pointerdown",
-    e => {
-
-      if(
-        e.target.classList.contains(
-          "trim-handle"
-        )
-      ){
-        return;
-      }
-
-
-      if(e.button!==0){
-        return;
-      }
-
-
-      startClipDrag(
-        e,
-        el,
-        c
-      );
-
-    }
-  );
-
-
-  el
-    .querySelector(
-      ".trim-handle.left"
-    )
-    .addEventListener(
-      "pointerdown",
-      e => {
-
-        startTrim(
-          e,
-          el,
-          c,
-          "left"
-        );
-
-      }
-    );
-
-
-  el
-    .querySelector(
-      ".trim-handle.right"
-    )
-    .addEventListener(
-      "pointerdown",
-      e => {
-
-        startTrim(
-          e,
-          el,
-          c,
-          "right"
-        );
-
-      }
-    );
-
-}
-
-
-/* =========================================================
-   24｜上下左右拖動
-   ========================================================= */
-
-function startClipDrag(
-  e,
-  el,
-  c
-){
-
-  e.preventDefault();
-
-  pushHistory();
-
-  selectedClipId =
-    c.id;
-
-
-  const sx =
-    e.clientX;
-
-  const sy =
-    e.clientY;
-
-  const oldStart =
-    c.start;
-
-  const oldTrack =
-    c.track;
-
-
-  const maxTrackNow =
-    Math.max(
-      0,
-      trackCount()
-    );
-
-
-  el.classList.add(
-    "dragging"
-  );
-
-
-  function move(ev){
-
-    c.start =
-      Math.max(
-
-        0,
-
-        oldStart +
-
-        (
-          ev.clientX -
-          sx
-        )
-        /
-        PPS
-
-      );
-
-
-    const deltaTrack =
-      Math.round(
-
-        (
-          ev.clientY -
-          sy
-        )
-        /
-        TRACK_H
-
-      );
-
-
-    c.track =
-      Math.max(
-
-        0,
-
-        Math.min(
-
-          maxTrackNow,
-
-          oldTrack +
-          deltaTrack
-
-        )
-
-      );
-
-
-    const pad =
-      leftPad();
-
-
-    el.style.left =
-      (
-        pad +
-        c.start *
-        PPS
-      )
-      +
-      "px";
-
-
-    el.style.top =
-      (
-        RULER_H +
-        c.track *
-        TRACK_H +
-        6
-      )
-      +
-      "px";
-
-  }
-
-
-  function up(){
-
-    window.removeEventListener(
-      "pointermove",
-      move
-    );
-
-    window.removeEventListener(
-      "pointerup",
-      up
-    );
-
-
-    pushCollisions(c);
-
-    normalizeTracks();
-
-    renderAll();
-
-  }
-
-
-  window.addEventListener(
-    "pointermove",
-    move
-  );
-
-  window.addEventListener(
-    "pointerup",
-    up
-  );
-
-}
-
-
-/* =========================================================
-   25｜左右拉長縮短
-   ========================================================= */
-
-function startTrim(
-  e,
-  el,
-  c,
-  side
-){
-
-  e.preventDefault();
-
-  e.stopPropagation();
-
-  pushHistory();
-
-  selectedClipId =
-    c.id;
-
-
-  const sx =
-    e.clientX;
-
-  const oldStart =
-    c.start;
-
-  const oldTrimStart =
-    c.trimStart;
-
-  const oldTrimEnd =
-    c.trimEnd;
-
-
-  const a =
-    assets.get(
-      c.assetId
-    );
-
-
-  function move(ev){
-
-    const deltaTimeline =
-      (
-        ev.clientX -
-        sx
-      )
-      /
-      PPS;
-
-
-    const deltaSource =
-      deltaTimeline *
-      c.speed;
-
-
-    if(side==="right"){
-
-      c.trimEnd =
-        Math.min(
-
-          a.duration,
-
-          Math.max(
-
-            oldTrimStart +
-            MIN_CLIP *
-            c.speed,
-
-            oldTrimEnd +
-            deltaSource
-
-          )
-
-        );
-
-    }
-    else{
-
-      const newTrim =
-        Math.min(
-
-          oldTrimEnd -
-          MIN_CLIP *
-          c.speed,
-
-          Math.max(
-
-            0,
-
-            oldTrimStart +
-            deltaSource
-
-          )
-
-        );
-
-
-      const shift =
-        (
-          newTrim -
-          oldTrimStart
-        )
-        /
-        c.speed;
-
-
-      c.trimStart =
-        newTrim;
-
-
-      c.start =
-        Math.max(
-
-          0,
-
-          oldStart +
-          shift
-
-        );
-
-    }
-
-
-    const pad =
-      leftPad();
-
-
-    el.style.left =
-      (
-        pad +
-        c.start *
-        PPS
-      )
-      +
-      "px";
-
-
-    el.style.width =
-      Math.max(
-        34,
-        clipDuration(c) *
-        PPS
-      )
-      +
-      "px";
-
-
-    drawWave(
-
-      el.querySelector("canvas"),
-
-      c,
-
-      a
-
-    );
-
-  }
-
-
-  function up(){
-
-    window.removeEventListener(
-      "pointermove",
-      move
-    );
-
-    window.removeEventListener(
-      "pointerup",
-      up
-    );
-
-
-    pushCollisions(c);
-
-    normalizeTracks();
-
-    renderAll();
-
-  }
-
-
-  window.addEventListener(
-    "pointermove",
-    move
-  );
-
-  window.addEventListener(
-    "pointerup",
-    up
-  );
-
-}
-
-
-/* =========================================================
-   26｜碰撞判斷
-   ========================================================= */
-
-function overlaps(a,b){
-
-  return (
-
-    a.track === b.track
-
-    &&
-
-    a.start <
-    clipEnd(b) -
-    .001
-
-    &&
-
-    clipEnd(a) >
-    b.start +
-    .001
-
-  );
-
-}
-
-
-/* =========================================================
-   27｜碰撞自動讓位
-   ========================================================= */
-
-function pushCollisions(moved){
-
-  const q =
-    [moved];
-
-
-  let guard =
-    0;
-
-
-  while(
-    q.length &&
-    guard++ < 200
-  ){
-
-    const cur =
-      q.shift();
-
-
-    const end =
-      clipEnd(cur);
-
-
-    clips.forEach(
-      o => {
-
-        if(
-
-          o.id !== cur.id
-
-          &&
-
-          o.track === cur.track
-
-          &&
-
-          overlaps(
-            cur,
-            o
-          )
-
-        ){
-
-          o.start =
-            end +
-            .02;
-
-
-          q.push(o);
-
-        }
-
-      }
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   28｜空軌道收起
-   ========================================================= */
-
-function normalizeTracks(){
-
-  if(!clips.length){
-    return;
-  }
-
-
-  const used =
-
-    [
-      ...new Set(
-        clips.map(
-          c => c.track
-        )
-      )
-    ]
-
-    .sort(
-      (a,b) =>
-        a-b
-    );
-
-
-  const map =
-    new Map(
-
-      used.map(
-        (v,i) =>
-          [v,i]
-      )
-
-    );
-
-
-  clips.forEach(
-    c => {
-
-      c.track =
-        map.get(
-          c.track
-        );
-
-    }
-  );
-
-}
-
-
-/* =========================================================
-   29｜點時間軸
-   ========================================================= */
-
-timelineShell
-  .addEventListener(
-    "pointerdown",
-    e => {
-
-      if(
-        e.target.closest(
-          ".clip,button,audio"
-        )
-      ){
-        return;
-      }
-
-
-      const rect =
-        timelineContent
-          .getBoundingClientRect();
-
-
-      const contentX =
-        e.clientX -
-        rect.left +
-        timelineScroll.scrollLeft;
-
-
-      const time =
-        Math.max(
-
-          0,
-
-          (
-            contentX -
-            leftPad()
-          )
-          /
-          PPS
-
-        );
-
-
-      setPlayheadTime(
-        time
-      );
-
-
-      updateToolState();
-
-    }
-  );
-
-
-timelineScroll
-  .addEventListener(
-    "scroll",
-    () => {
-
-      if(!isPlaying){
-
-        updateToolState();
-
-      }
-
-    }
-  );
-
-
-window
-  .addEventListener(
-    "resize",
-    renderAll
-  );
-
-
-/* =========================================================
-   30｜工具按鈕
-   ========================================================= */
-
-document
-  .getElementById("playBtn")
-  .addEventListener(
-    "click",
-    togglePlay
-  );
-
-document
-  .getElementById("undoBtn")
-  .addEventListener(
-    "click",
-    undoAction
-  );
-
-document
-  .getElementById("redoBtn")
-  .addEventListener(
-    "click",
-    redoAction
-  );
-
-document
-  .getElementById("beatBtn")
-  .addEventListener(
-    "click",
-    addBeat
-  );
-
-document
-  .getElementById("splitBtn")
-  .addEventListener(
-    "click",
-    splitSelected
-  );
-
-document
-  .getElementById("deleteBtn")
-  .addEventListener(
-    "click",
-    deleteSelected
-  );
-
-document
-  .getElementById("volumeBtn")
-  .addEventListener(
-    "click",
-    editVolume
-  );
-
-document
-  .getElementById("fadeBtn")
-  .addEventListener(
-    "click",
-    editFade
-  );
-
-document
-  .getElementById("copyBtn")
-  .addEventListener(
-    "click",
-    copySelected
-  );
-
-document
-  .getElementById("speedBtn")
-  .addEventListener(
-    "click",
-    editSpeed
-  );
-
-document
-  .getElementById("muteBtn")
-  .addEventListener(
-    "click",
-    toggleMute
-  );
-
-
-/* =========================================================
-   31｜工具狀態
-   ========================================================= */
-
-function updateToolState(){
-
-  const s =
-    getSelected();
-
-
-  document
-    .querySelectorAll(
-      ".need-clip"
-    )
-    .forEach(
-      b => {
-
-        b.disabled =
-          !s;
-
-      }
-    );
-
-
-  selectTip.textContent =
-
-    s
-
-      ? `目前選擇：${s.name}｜播放線 ${formatPrecise(getPlayheadTime())}`
-
-      : `請先點選時間軸上的一段素材｜播放線 ${formatPrecise(getPlayheadTime())}`;
-
-}
-
-
-/* =========================================================
-   32｜節拍
-   ========================================================= */
-
-function addBeat(){
-
-  pushHistory();
-
-
-  const t =
-    getPlayheadTime();
-
-
-  const i =
-    beats.findIndex(
-      x =>
-        Math.abs(
-          x-t
-        ) < .15
-    );
-
-
-  if(i>=0){
-
-    beats.splice(
-      i,
-      1
-    );
-
-  }
-  else{
-
-    beats.push(t);
-
-  }
-
-
-  beats.sort(
-    (a,b) =>
-      a-b
-  );
-
-
-  renderAll();
-
-
-  showToast(
-
-    i>=0
-      ? "🚩 已移除節拍"
-      : "🚩 已加入節拍"
-
-  );
-
-}
-
-
-/* =========================================================
-   33｜分割
-   ========================================================= */
-
-function splitSelected(){
-
-  const c =
-    getSelected();
-
-
-  if(!c){
-    return;
-  }
-
-
-  const t =
-    getPlayheadTime();
-
-
-  if(
-
-    t <=
-    c.start +
-    .02
-
-    ||
-
-    t >=
-    clipEnd(c) -
-    .02
-
-  ){
-
-    return showToast(
-      "請把白線放在片段中間"
-    );
-
-  }
-
-
-  pushHistory();
-
-
-  const sourceSplit =
-
-    c.trimStart +
-
-    (
-      t -
-      c.start
-    )
-
-    *
-
-    c.speed;
-
-
-  const right = {
-
-    ...c,
-
-    id:
-      uid("clip"),
-
-    trimStart:
-      sourceSplit,
-
-    start:
-      t
-
-  };
-
-
-  c.trimEnd =
-    sourceSplit;
-
-
-  clips.push(
-    right
-  );
-
-
-  selectedClipId =
-    right.id;
-
-
-  renderAll();
-
-
-  showToast(
-    "✂️ 已分割"
-  );
-
-}
-
-
-/* =========================================================
-   34｜刪除
-   ========================================================= */
-
-function deleteSelected(){
-
-  const c =
-    getSelected();
-
-
-  if(!c){
-    return;
-  }
-
-
-  pushHistory();
-
-
-  clips =
-    clips.filter(
-      x =>
-        x.id !==
-        c.id
-    );
-
-
-  selectedClipId =
-    null;
-
-
-  normalizeTracks();
-
-  renderAll();
-
-
-  showToast(
-    "🗑️ 已刪除"
-  );
-
-}
-
-
-/* =========================================================
-   35｜複製
-   ========================================================= */
-
-function copySelected(){
-
-  const c =
-    getSelected();
-
-
-  if(!c){
-    return;
-  }
-
-
-  pushHistory();
-
-
-  const n = {
-
-    ...c,
-
-    id:
-      uid("clip"),
-
-    start:
-      clipEnd(c) +
-      .05
-
-  };
-
-
-  clips.push(n);
-
-
-  pushCollisions(n);
-
-
-  selectedClipId =
-    n.id;
-
-
-  renderAll();
-
-
-  showToast(
-    "⧉ 已複製"
-  );
-
-}
-
-
-/* =========================================================
-   36｜靜音
-   ========================================================= */
-
-function toggleMute(){
-
-  const c =
-    getSelected();
-
-
-  if(!c){
-    return;
-  }
-
-
-  pushHistory();
-
-
-  c.muted =
-    !c.muted;
-
-
-  renderAll();
-
-
-  showToast(
-
-    c.muted
-      ? "🔇 已靜音"
-      : "🔊 已恢復聲音"
-
-  );
-
-}
-
-
-/* =========================================================
-   37｜音量
-   ========================================================= */
-
-function editVolume(){
-
-  const c =
-    getSelected();
-
-
-  if(!c){
-    return;
-  }
-
-
-  openModal(
-
-    "🔊 音量",
-
-    `
-
-    <div class="form-group">
-
-      <label>
-
-        音量：
-
-        <b id="volumeText">
-          ${Math.round(c.volume*100)}%
-        </b>
-
-      </label>
-
-      <input
-        id="volumeRange"
-        type="range"
-        min="0"
-        max="150"
-        value="${Math.round(c.volume*100)}"
-      >
-
-    </div>
-
-    <button
-      id="saveVolume"
-      class="primary-btn"
-    >
-      確定
-    </button>
-
-    `
-
-  );
-
-
-  const r =
-    document.getElementById(
-      "volumeRange"
-    );
-
-
-  r.addEventListener(
-    "input",
-    () => {
-
-      document
-        .getElementById(
-          "volumeText"
-        )
-        .textContent =
-          r.value +
-          "%";
-
-    }
-  );
-
-
-  document
-    .getElementById(
-      "saveVolume"
-    )
-    .addEventListener(
-      "click",
-      () => {
-
-        pushHistory();
-
-        c.volume =
-          Number(r.value) /
-          100;
-
-        closeModal();
-
-        showToast(
-          "🔊 音量已調整"
-        );
-
-      }
-    );
-
-}
-
-
-/* =========================================================
-   38｜淡入淡出
-   ========================================================= */
-
-function editFade(){
-
-  const c =
-    getSelected();
-
-
-  if(!c){
-    return;
-  }
-
-
-  openModal(
-
-    "◐ 淡入淡出",
-
-    `
-
-    <div class="form-group">
-
-      <label>
-        淡入秒數
-      </label>
-
-      <input
-        id="fadeIn"
-        type="number"
-        min="0"
-        step="0.1"
-        value="${c.fadeIn}"
-      >
-
-    </div>
-
-    <div class="form-group">
-
-      <label>
-        淡出秒數
-      </label>
-
-      <input
-        id="fadeOut"
-        type="number"
-        min="0"
-        step="0.1"
-        value="${c.fadeOut}"
-      >
-
-    </div>
-
-    <button
-      id="saveFade"
-      class="primary-btn"
-    >
-      確定
-    </button>
-
-    `
-
-  );
-
-
-  document
-    .getElementById(
-      "saveFade"
-    )
-    .addEventListener(
-      "click",
-      () => {
-
-        pushHistory();
-
-
-        const d =
-          clipDuration(c);
-
-
-        c.fadeIn =
-          Math.min(
-
-            d,
-
-            Math.max(
-
-              0,
-
-              Number(
-                document
-                  .getElementById(
-                    "fadeIn"
-                  )
-                  .value
-              )
-              ||
-              0
-
-            )
-
-          );
-
-
-        c.fadeOut =
-          Math.min(
-
-            d,
-
-            Math.max(
-
-              0,
-
-              Number(
-                document
-                  .getElementById(
-                    "fadeOut"
-                  )
-                  .value
-              )
-              ||
-              0
-
-            )
-
-          );
-
-
-        closeModal();
-
-
-        showToast(
-          "◐ 已設定淡入淡出"
-        );
-
-      }
-    );
-
-}
-
-
-/* =========================================================
-   39｜變速
-   ========================================================= */
-
-function editSpeed(){
-
-  const c =
-    getSelected();
-
-
-  if(!c){
-    return;
-  }
-
-
-  openModal(
-
-    "⏱️ 變速",
-
-    `
-
-    <div class="form-group">
-
-      <label>
-        播放速度
-      </label>
-
-      <select id="speedSelect">
-
-        ${
-
-          [.5,.75,1,1.25,1.5,2]
-
-          .map(
-            v => `
-
-            <option
-              value="${v}"
-              ${c.speed===v ? "selected" : ""}
-            >
-              ${v}x
-            </option>
-
-            `
-          )
-
-          .join("")
-
-        }
-
-      </select>
-
-    </div>
-
-    <button
-      id="saveSpeed"
-      class="primary-btn"
-    >
-      確定
-    </button>
-
-    `
-
-  );
-
-
-  document
-    .getElementById(
-      "saveSpeed"
-    )
-    .addEventListener(
-      "click",
-      () => {
-
-        pushHistory();
-
-
-        c.speed =
-          Number(
-            document
-              .getElementById(
-                "speedSelect"
-              )
-              .value
-          );
-
-
-        pushCollisions(c);
-
-
-        closeModal();
-
-        renderAll();
-
-
-        showToast(
-          "⏱️ 速度已調整"
-        );
-
-      }
-    );
-
-}
-
-
-/* =========================================================
-   40｜回上一步 / 重做
-   ========================================================= */
-
-function snapshot(){
-
-  return JSON.stringify({
-
-    clips:
-      clips.map(
-        c => ({
-          ...c
-        })
-      ),
-
-    beats:
-      [...beats]
-
-  });
-
-}
-
-
-function pushHistory(){
-
-  undoStack.push(
-    snapshot()
-  );
-
-
-  if(
-    undoStack.length >
-    60
-  ){
-
-    undoStack.shift();
-
-  }
-
-
-  redoStack = [];
-
-}
-
-
-function restoreSnapshot(s){
-
-  const x =
-    JSON.parse(s);
-
-
-  clips =
-    x.clips;
-
-
-  beats =
-    x.beats ||
-    [];
-
-
-  selectedClipId =
-    null;
-
-
-  normalizeTracks();
-
-  renderAll();
-
-}
-
-
-function undoAction(){
-
-  if(!undoStack.length){
-
-    return showToast(
-      "沒有可以回上一步的動作"
-    );
-
-  }
-
-
-  redoStack.push(
-    snapshot()
-  );
-
-
-  restoreSnapshot(
-    undoStack.pop()
-  );
-
-
-  showToast(
-    "↶ 已回上一步"
-  );
-
-}
-
-
-function redoAction(){
-
-  if(!redoStack.length){
-
-    return showToast(
-      "沒有可以重做的動作"
-    );
-
-  }
-
-
-  undoStack.push(
-    snapshot()
-  );
-
-
-  restoreSnapshot(
-    redoStack.pop()
-  );
-
-
-  showToast(
-    "↷ 已重做"
-  );
-
-}
-
-
-/* =========================================================
-   41｜多軌播放
-   ========================================================= */
-
-async function togglePlay(){
-
-  if(isPlaying){
-
-    stopPlayback();
-
-    return;
-
-  }
-
-
-  if(!clips.length){
-
-    return showToast(
-      "請先加入素材"
-    );
-
-  }
-
-
-  await audioContext.resume();
-
-
-  startPlayback();
-
-}
-
-
-function startPlayback(){
-
-  stopPlayback();
-
-
-  isPlaying =
-    true;
-
-
-  document
-    .querySelector(
-      "#playBtn .tool-icon"
-    )
-    .textContent =
-      "■";
-
-
-  playStartTimeline =
-    getPlayheadTime();
-
-
-  playStartCtx =
-    audioContext.currentTime;
-
-
-  activeSources = [];
-
-
-  clips.forEach(
-    c => {
-
-      if(c.muted){
-        return;
-      }
-
-
-      const a =
-        assets.get(
-          c.assetId
-        );
-
-
-      if(
-        !a ||
-        clipEnd(c) <=
-        playStartTimeline
-      ){
-
-        return;
-
-      }
-
-
-      const timelineStart =
-        Math.max(
-          playStartTimeline,
-          c.start
-        );
-
-
-      const delay =
-        timelineStart -
-        playStartTimeline;
-
-
-      const sourceOffset =
-
-        c.trimStart +
-
-        (
-          timelineStart -
-          c.start
-        )
-
-        *
-
-        c.speed;
-
-
-      const sourceDuration =
-        Math.max(
-
-          0,
-
-          c.trimEnd -
-          sourceOffset
-
-        );
-
-
-      if(sourceDuration<=0){
-        return;
-      }
-
-
-      const source =
-        audioContext
-          .createBufferSource();
-
-
-      const gain =
-        audioContext
-          .createGain();
-
-
-      source.buffer =
-        a.buffer;
-
-
-      source.playbackRate.value =
-        c.speed;
-
-
-      source
-        .connect(gain)
-        .connect(
-          audioContext.destination
-        );
-
-
-      const when =
-        audioContext.currentTime +
-        delay;
-
-
-      const tDur =
-        sourceDuration /
-        c.speed;
-
-
-      const base =
-        c.volume;
-
-
-      const relative =
-        timelineStart -
-        c.start;
-
-
-      let initial =
-        base;
-
-
-      if(
-        c.fadeIn>0 &&
-        relative<c.fadeIn
-      ){
-
-        initial =
-          base *
-          (
-            relative /
-            c.fadeIn
-          );
-
-      }
-
-
-      if(
-        c.fadeOut>0 &&
-        relative >
-        clipDuration(c) -
-        c.fadeOut
-      ){
-
-        initial =
-          Math.min(
-
-            initial,
-
-            base *
-            (
-              (
-                clipDuration(c) -
-                relative
-              )
-              /
-              c.fadeOut
-            )
-
-          );
-
-      }
-
-
-      gain.gain
-        .setValueAtTime(
-
-          Math.max(
-            0,
-            initial
-          ),
-
-          when
-
-        );
-
-
-      if(
-        c.fadeIn>0 &&
-        relative<c.fadeIn
-      ){
-
-        gain.gain
-          .linearRampToValueAtTime(
-
-            base,
-
-            when +
-            (
-              c.fadeIn -
-              relative
-            )
-
-          );
-
-      }
-
-
-      const fadeOutStart =
-        clipDuration(c) -
-        c.fadeOut;
-
-
-      if(
-        c.fadeOut>0 &&
-        relative<fadeOutStart
-      ){
-
-        gain.gain
-          .setValueAtTime(
-
-            base,
-
-            when +
-            (
-              fadeOutStart -
-              relative
-            )
-
-          );
-
-
-        gain.gain
-          .linearRampToValueAtTime(
-
-            0,
-
-            when +
-            tDur
-
-          );
-
-      }
-      else if(
-        c.fadeOut>0
-      ){
-
-        gain.gain
-          .linearRampToValueAtTime(
-
-            0,
-
-            when +
-            tDur
-
-          );
-
-      }
-
-
-      source.start(
-
-        when,
-
-        sourceOffset,
-
-        sourceDuration
-
-      );
-
-
-      activeSources.push(
-        source
-      );
-
-    }
-  );
-
-
-  animatePlayback();
-
-}
-
-
-/* =========================================================
-   42｜播放時移動時間軸
-   ========================================================= */
-
-function animatePlayback(){
-
-  if(!isPlaying){
-    return;
-  }
-
-
-  const t =
-
-    playStartTimeline +
-
-    (
-      audioContext.currentTime -
-      playStartCtx
-    );
-
-
-  setPlayheadTime(t);
-
-
-  if(
-    t >=
-    projectDuration() +
-    .05
-  ){
-
-    stopPlayback();
-
-    return;
-
-  }
-
-
-  playRAF =
-    requestAnimationFrame(
-      animatePlayback
-    );
-
-}
-
-
-/* =========================================================
-   43｜停止播放
-   ========================================================= */
-
-function stopPlayback(){
-
-  activeSources
-    .forEach(
-      s => {
-
-        try{
-          s.stop();
-        }
-        catch{}
-
-      }
-    );
-
-
-  activeSources = [];
-
-
-  cancelAnimationFrame(
-    playRAF
-  );
-
-
-  if(isPlaying){
-
-    isPlaying = false;
-
-
-    document
-      .querySelector(
-        "#playBtn .tool-icon"
-      )
-      .textContent =
-        "▶";
-
-  }
-
-}
-
-
-/* =========================================================
-   44｜完成
-   合成 WAV + 自動下載 + 成品 + 草稿
-   ========================================================= */
-
-async function finishProject(){
-
-  if(!clips.length){
-
-    return showToast(
-      "請先加入素材"
-    );
-
-  }
-
-
-  stopPlayback();
-
-
-  const defaultName =
-    makeDefaultName();
-
-
-  const name =
-
-    (
-      prompt(
-        "請輸入作品名稱",
-        defaultName
-      )
-      ||
-      defaultName
-    )
-    .trim()
-    ||
-    defaultName;
-
-
+async function toggleFullscreen(){
   try{
-
-    showToast(
-      "正在合成成品…"
-    );
-
-
-    const wavBlob =
-      await renderMixToWav();
-
-
-    const now =
-      new Date();
-
-
-    const productId =
-      uid("product");
-
-
-    const draftId =
-      uid("draft");
-
-
-    const assetRecords =
-      await collectProjectAssets();
-
-
-    await dbPut(
-
-      "products",
-
-      {
-
-        id:productId,
-
-        name:name,
-
-        createdAt:
-          now.toISOString(),
-
-        duration:
-          projectDuration(),
-
-        blob:
-          wavBlob
-
-      }
-
-    );
-
-
-    await dbPut(
-
-      "drafts",
-
-      {
-
-        id:draftId,
-
-        name:name,
-
-        createdAt:
-          now.toISOString(),
-
-        duration:
-          projectDuration(),
-
-        clips:
-          clips.map(
-            c => ({
-              ...c
-            })
-          ),
-
-        beats:
-          [...beats],
-
-        assets:
-          assetRecords,
-
-        finalBlob:
-          wavBlob,
-
-        productId:
-          productId
-
-      }
-
-    );
-
-
-    downloadBlob(
-
-      wavBlob,
-
-      name +
-      ".wav"
-
-    );
-
-
-    showToast(
-      "✅ 已下載，並保存到成品與草稿"
-    );
-
-  }
-  catch(err){
-
-    console.error(err);
-
-    showToast(
-      "⚠️ 完成失敗，請再試一次"
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   45｜混合所有軌道
-   ========================================================= */
-
-async function renderMixToWav(){
-
-  const duration =
-    Math.max(
-      .1,
-      projectDuration()
-    );
-
-
-  const rate =
-    44100;
-
-
-  const offline =
-    new OfflineAudioContext(
-
-      2,
-
-      Math.ceil(
-        duration *
-        rate
-      ),
-
-      rate
-
-    );
-
-
-  clips.forEach(
-    c => {
-
-      if(c.muted){
-        return;
-      }
-
-
-      const a =
-        assets.get(
-          c.assetId
-        );
-
-
-      if(!a){
-        return;
-      }
-
-
-      const source =
-        offline
-          .createBufferSource();
-
-
-      const gain =
-        offline
-          .createGain();
-
-
-      source.buffer =
-        a.buffer;
-
-
-      source.playbackRate.value =
-        c.speed;
-
-
-      source
-        .connect(gain)
-        .connect(
-          offline.destination
-        );
-
-
-      const start =
-        c.start;
-
-
-      const d =
-        clipDuration(c);
-
-
-      const g =
-        c.volume;
-
-
-      gain.gain
-        .setValueAtTime(
-
-          c.fadeIn>0
-            ? 0
-            : g,
-
-          start
-
-        );
-
-
-      if(c.fadeIn>0){
-
-        gain.gain
-          .linearRampToValueAtTime(
-
-            g,
-
-            start +
-            Math.min(
-              c.fadeIn,
-              d
-            )
-
-          );
-
-      }
-
-
-      if(c.fadeOut>0){
-
-        const fs =
-          Math.max(
-
-            start,
-
-            start +
-            d -
-            c.fadeOut
-
-          );
-
-
-        gain.gain
-          .setValueAtTime(
-            g,
-            fs
-          );
-
-
-        gain.gain
-          .linearRampToValueAtTime(
-
-            0,
-
-            start +
-            d
-
-          );
-
-      }
-
-
-      source.start(
-
-        start,
-
-        c.trimStart,
-
-        c.trimEnd -
-        c.trimStart
-
-      );
-
+    if(!document.fullscreenElement){
+      if(document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+      else return showToast("這支手機瀏覽器目前不支援全螢幕");
+    }else{
+      await document.exitFullscreen();
     }
-  );
-
-
-  return audioBufferToWavBlob(
-
-    await offline
-      .startRendering()
-
-  );
-
+  }catch(e){
+    showToast("這支手機瀏覽器目前不支援全螢幕");
+  }
 }
 
-
 /* =========================================================
-   46｜AudioBuffer 轉 WAV
+   自動讀取 GitHub 素材庫「全部音訊檔」
+   未來新增素材，只要放進素材庫 Repo，重新整理就會出現
    ========================================================= */
+async function loadLibraryManifest(){
+  if(libraryManifest) return libraryManifest;
+  if(libraryManifestPromise) return libraryManifestPromise;
 
-function audioBufferToWavBlob(buffer){
+  libraryManifestPromise=(async()=>{
+    let paths=[];
 
-  const channels =
-    buffer.numberOfChannels;
-
-
-  const rate =
-    buffer.sampleRate;
-
-
-  const length =
-    buffer.length;
-
-
-  const block =
-    channels *
-    2;
-
-
-  const ab =
-    new ArrayBuffer(
-
-      44 +
-
-      length *
-      block
-
-    );
-
-
-  const view =
-    new DataView(ab);
-
-
-  let p = 0;
-
-
-  const str =
-    s => {
-
-      for(
-        let i=0;
-        i<s.length;
-        i++
-      ){
-
-        view.setUint8(
-
-          p++,
-
-          s.charCodeAt(i)
-
-        );
-
+    /* 第一選擇：GitHub repository tree，自動拿全部檔案 */
+    try{
+      const r=await fetch(REPO_TREE_API,{headers:{"Accept":"application/vnd.github+json"},cache:"no-store"});
+      if(r.ok){
+        const data=await r.json();
+        paths=(data.tree||[])
+          .filter(x=>x.type==="blob" && AUDIO_EXT.test(x.path||""))
+          .map(x=>x.path);
       }
+    }catch(e){console.warn("GitHub tree 讀取失敗",e)}
 
+    /* 第二選擇：如果 API 暫時失敗，就從素材庫首頁抓出音訊連結 */
+    if(!paths.length){
+      try{
+        const r=await fetch(LIBRARY_BASE,{cache:"no-store"});
+        if(r.ok){
+          const html=await r.text();
+          const re=/["'`]([^"'`<>]+\.(?:mp3|wav|m4a|aac|ogg|flac))["'`]/gi;
+          const set=new Set();
+          let m;
+          while((m=re.exec(html))){
+            let p=m[1];
+            try{
+              const u=new URL(p,LIBRARY_BASE);
+              if(u.origin===location.origin && u.pathname.includes("/taekwondo-music-library/")){
+                p=decodeURIComponent(u.pathname.split("/taekwondo-music-library/")[1]||"");
+                if(p && AUDIO_EXT.test(p)) set.add(p);
+              }
+            }catch{}
+          }
+          paths=[...set];
+        }
+      }catch(e){console.warn("素材庫首頁讀取失敗",e)}
+    }
+
+    const all=paths
+      .filter(Boolean)
+      .filter(p=>!p.startsWith("."))
+      .map(path=>materialFromPath(path))
+      .filter(Boolean);
+
+    /* 去除重複 */
+    const unique=new Map();
+    all.forEach(m=>unique.set(m.path,m));
+    const list=[...unique.values()];
+
+    libraryManifest={
+      music:list.filter(x=>x.type==="music"),
+      splice:list.filter(x=>x.type==="splice"),
+      effect:list.filter(x=>x.type==="effect")
     };
 
-
-  str("RIFF");
-
-
-  view.setUint32(
-    p,
-    36 +
-    length *
-    block,
-    true
-  );
-
-  p += 4;
-
-
-  str("WAVE");
-
-  str("fmt ");
-
-
-  view.setUint32(
-    p,
-    16,
-    true
-  );
-
-  p += 4;
-
-
-  view.setUint16(
-    p,
-    1,
-    true
-  );
-
-  p += 2;
-
-
-  view.setUint16(
-    p,
-    channels,
-    true
-  );
-
-  p += 2;
-
-
-  view.setUint32(
-    p,
-    rate,
-    true
-  );
-
-  p += 4;
-
-
-  view.setUint32(
-
-    p,
-
-    rate *
-    block,
-
-    true
-
-  );
-
-  p += 4;
-
-
-  view.setUint16(
-    p,
-    block,
-    true
-  );
-
-  p += 2;
-
-
-  view.setUint16(
-    p,
-    16,
-    true
-  );
-
-  p += 2;
-
-
-  str("data");
-
-
-  view.setUint32(
-
-    p,
-
-    length *
-    block,
-
-    true
-
-  );
-
-  p += 4;
-
-
-  const data =
-
-    Array.from(
-
-      {
-        length:channels
-      },
-
-      (_,ch) =>
-        buffer
-          .getChannelData(ch)
-
-    );
-
-
-  for(
-    let i=0;
-    i<length;
-    i++
-  ){
-
-    for(
-      let ch=0;
-      ch<channels;
-      ch++
-    ){
-
-      let s =
-        Math.max(
-
-          -1,
-
-          Math.min(
-            1,
-            data[ch][i]
-          )
-
-        );
-
-
-      view.setInt16(
-
-        p,
-
-        s<0
-          ? s*0x8000
-          : s*0x7fff,
-
-        true
-
-      );
-
-
-      p += 2;
-
-    }
-
+    Object.values(libraryManifest).forEach(arr=>arr.sort(naturalMaterialSort));
+    return libraryManifest;
+  })();
+
+  try{return await libraryManifestPromise}
+  finally{libraryManifestPromise=null}
+}
+
+function materialFromPath(path){
+  const clean=String(path).replace(/^\/+/,"");
+  if(!AUDIO_EXT.test(clean)) return null;
+
+  const decoded=safeDecode(clean);
+  const lower=decoded.toLowerCase();
+  const filename=decoded.split("/").pop()||decoded;
+  const base=filename.replace(/\.[^.]+$/,"");
+  let type="music";
+
+  if(lower.includes("拼接素材") || lower.includes("/splice") || base.includes("拼接")){
+    type="splice";
+  }else if(lower.includes("音效") || /(^|\/|_)effect\d*/i.test(lower) || /effect/i.test(base)){
+    type="effect";
+  }else if(lower.includes("音樂") || /(^|\/|_)music\d*/i.test(lower) || /music/i.test(base)){
+    type="music";
+  }else{
+    /* 素材庫裡其他沒有分類字樣的音訊，預設視為音樂，避免漏掉新音樂 */
+    type="music";
   }
 
+  const number=extractNumber(base);
+  let id;
+  if(type==="music" && /^music\s*\d+/i.test(base)) id=base.replace(/\s+/g,"").toLowerCase();
+  else if(type==="effect" && /^effect\s*\d+/i.test(base)) id=base.replace(/\s+/g,"").toLowerCase();
+  else if(type==="splice" && number!=null) id=`splice${String(number).padStart(2,"0")}`;
+  else id=`${type}_${slugify(base)}`;
 
-  return new Blob(
+  let title=base;
+  if(type==="music" && number!=null && /^music/i.test(base)) title=`音樂 ${String(number).padStart(2,"0")}`;
+  if(type==="effect" && number!=null && /^effect/i.test(base)) title=`音效 ${String(number).padStart(2,"0")}`;
+  if(type==="splice" && number!=null) title=`拼接 ${String(number).padStart(2,"0")}`;
 
-    [ab],
-
-    {
-      type:"audio/wav"
-    }
-
-  );
-
+  return{
+    id,type,title,path:clean,base,number,
+    url:new URL(clean,LIBRARY_BASE).href
+  };
 }
 
+function safeDecode(s){try{return decodeURIComponent(s)}catch{return s}}
+function slugify(s){return String(s).trim().toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\u4e00-\u9fff_-]+/g,"").slice(0,80)||uid("item")}
+function extractNumber(s){const m=String(s).match(/\d+/);return m?Number(m[0]):null}
+function naturalMaterialSort(a,b){return a.title.localeCompare(b.title,"zh-Hant",{numeric:true,sensitivity:"base"})}
 
 /* =========================================================
-   47｜草稿
+   標記同步：使用同一個 origin 的 localStorage
+   已標記的一律排最上面
    ========================================================= */
+function markAliases(m){
+  const arr=[m.id,m.base,slugify(m.base)];
+  if(m.number!=null){
+    const n=m.number;
+    const pad=String(n).padStart(2,"0");
+    if(m.type==="music") arr.push(`music${pad}`,`music${n}`);
+    if(m.type==="effect") arr.push(`effect${pad}`,`effect${n}`);
+    if(m.type==="splice") arr.push(`splice${pad}`,`splice${n}`,`${n}_拼接素材`,`拼接${n}`);
+  }
+  return [...new Set(arr.filter(Boolean))];
+}
+function isMarked(m){
+  return markAliases(m).some(id=>localStorage.getItem("favorite_"+id)==="true");
+}
+function setMarked(m,value){
+  markAliases(m).forEach(id=>localStorage.setItem("favorite_"+id,value?"true":"false"));
+}
+function materialSortMarked(a,b){
+  const marked=Number(isMarked(b))-Number(isMarked(a));
+  return marked || naturalMaterialSort(a,b);
+}
+window.addEventListener("storage",()=>{libraryManifest=null});
 
+/* =========================================================
+   素材面板
+   ========================================================= */
+async function openMaterialPanel(type){
+  const names={music:"🎵 音樂",splice:"✂️ 拼接",effect:"🔊 音效"};
+  openModal(names[type],`<div class="panel-note">素材載入中…</div>`);
+
+  try{
+    const manifest=await loadLibraryManifest();
+    const list=[...(manifest[type]||[])].sort(materialSortMarked);
+
+    if(!list.length){
+      document.getElementById("modalBody").innerHTML=`<div class="panel-note">目前在素材庫裡沒有讀到這個分類的音訊。</div>`;
+      return;
+    }
+
+    document.getElementById("modalBody").innerHTML=`
+      <div class="panel-note">這裡顯示素材庫目前的全部${names[type].replace(/^..\s*/,"")}。已標記的素材自動排最上面；按「使用」立即加入時間軸。</div>
+      <div class="material-list">${list.map(materialCardHTML).join("")}</div>
+    `;
+    bindMaterialPanel(type);
+    bindAudioPreviewExclusivity();
+  }catch(e){
+    console.error(e);
+    document.getElementById("modalBody").innerHTML=`<div class="panel-note">⚠️ 素材庫目前讀取失敗。請確認網路後重新開啟這個分類。</div>`;
+  }
+}
+
+function materialCardHTML(m){
+  const marked=isMarked(m);
+  const symbol=m.type==="music"?(marked?"♥":"♡"):m.type==="effect"?(marked?"★":"☆"):"✂";
+  return `
+    <div class="material-card" data-card="${escapeHtml(m.id)}">
+      <div class="material-info">
+        <div class="material-name">${escapeHtml(m.title)}</div>
+        <div class="material-type">${m.type==="music"?"音樂":m.type==="splice"?"拼接":"音效"}</div>
+      </div>
+      <button class="mark-btn ${m.type} ${marked?"on":""}" data-mark="${escapeHtml(m.id)}">${symbol}</button>
+      <button class="use-btn" data-use="${escapeHtml(m.id)}">使用</button>
+      <audio controls preload="none" src="${escapeHtml(m.url)}"></audio>
+    </div>`;
+}
+
+function bindMaterialPanel(type){
+  document.querySelectorAll("[data-mark]").forEach(btn=>{
+    btn.addEventListener("click",async()=>{
+      const manifest=await loadLibraryManifest();
+      const m=(manifest[type]||[]).find(x=>x.id===btn.dataset.mark);
+      if(!m) return;
+      setMarked(m,!isMarked(m));
+      openMaterialPanel(type); // 立即重新排序，標記的跳到最上面
+    });
+  });
+
+  document.querySelectorAll("[data-use]").forEach(btn=>{
+    btn.addEventListener("click",async()=>{
+      const manifest=await loadLibraryManifest();
+      const m=(manifest[type]||[]).find(x=>x.id===btn.dataset.use);
+      if(!m) return;
+      const old=btn.textContent;
+      btn.disabled=true;btn.textContent="加入中…";
+      try{
+        await addLibraryMaterial(m);
+        btn.textContent="✅ 已加入";
+        showToast("✅ 已加入時間軸");
+        setTimeout(()=>{if(document.body.contains(btn)){btn.disabled=false;btn.textContent=old}},900);
+      }catch(e){
+        console.error(e);btn.disabled=false;btn.textContent=old;showToast("⚠️ 這個素材目前讀取不到");
+      }
+    });
+  });
+}
+
+function bindAudioPreviewExclusivity(){
+  document.querySelectorAll(".material-card audio").forEach(a=>{
+    a.addEventListener("play",()=>{
+      document.querySelectorAll(".material-card audio").forEach(other=>{if(other!==a) other.pause()});
+    });
+  });
+}
+
+/* =========================================================
+   加入素材庫音訊
+   ========================================================= */
+async function addLibraryMaterial(m){
+  await audioContext.resume();
+  const response=await fetch(m.url,{cache:"no-store"});
+  if(!response.ok) throw new Error("HTTP "+response.status);
+  const blob=await response.blob();
+  const buffer=await audioContext.decodeAudioData((await blob.arrayBuffer()).slice(0));
+  const assetId=uid("asset");
+  assets.set(assetId,{
+    id:assetId,name:m.title,type:m.type,blob,buffer,duration:buffer.duration,
+    peaks:createPeaks(buffer,6000),sourceUrl:m.url,materialId:m.id
+  });
+  addNewClipFromAsset(assetId,m.title,m.type,true);
+}
+
+/* =========================================================
+   加入手機自己的音樂
+   ========================================================= */
+async function addUploadedFiles(files){
+  const before=snapshot();
+  let added=0;
+  for(const file of files){
+    try{
+      showToast("正在讀取音樂波形…");
+      const buffer=await audioContext.decodeAudioData((await file.arrayBuffer()).slice(0));
+      const assetId=uid("asset");
+      assets.set(assetId,{id:assetId,name:file.name,type:"music",blob:file,buffer,duration:buffer.duration,peaks:createPeaks(buffer,6000),sourceUrl:null,materialId:null});
+      addNewClipFromAsset(assetId,file.name,"music",false);
+      added++;
+    }catch(e){console.error(e);showToast("⚠️ 有音訊檔無法讀取")}
+  }
+  if(added){pushUndoSnapshot(before);normalizeTracks();renderAll();showToast("✅ 已加入自己的音樂")}
+}
+
+function addNewClipFromAsset(assetId,name,type,saveHistory=true){
+  const a=assets.get(assetId);if(!a) return;
+  if(saveHistory) saveUndo();
+  const newTrack=clips.length?Math.max(...clips.map(c=>c.track))+1:0;
+  clips.push({
+    id:uid("clip"),assetId,name,type,track:newTrack,start:getPlayheadTime(),
+    trimStart:0,trimEnd:a.duration,volume:1,muted:false,speed:1,fadeIn:0,fadeOut:0
+  });
+  normalizeTracks();renderAll();
+}
+
+/* =========================================================
+   真實波形分析
+   ========================================================= */
+function createPeaks(buffer,count){
+  const n=Math.max(1,Math.min(count,buffer.length));
+  const peaks=new Float32Array(n);const step=buffer.length/n;
+  for(let i=0;i<n;i++){
+    const s=Math.floor(i*step),e=Math.min(buffer.length,Math.floor((i+1)*step));let max=0;
+    for(let ch=0;ch<buffer.numberOfChannels;ch++){
+      const data=buffer.getChannelData(ch);
+      for(let j=s;j<e;j++){const v=Math.abs(data[j]);if(v>max)max=v}
+    }
+    peaks[i]=max;
+  }
+  return peaks;
+}
+
+/* =========================================================
+   時間軸計算
+   ========================================================= */
+function clipDuration(c){return Math.max(MIN_CLIP,(c.trimEnd-c.trimStart)/c.speed)}
+function clipEnd(c){return c.start+clipDuration(c)}
+function projectDuration(){return Math.max(0,...clips.map(clipEnd),...beats,0)}
+function getSelected(){return clips.find(c=>c.id===selectedClipId)||null}
+function leftPad(){return timelineShell.clientWidth/2}
+function getPlayheadTime(){return Math.max(0,timelineScroll.scrollLeft/PPS)}
+function setPlayheadTime(t){timelineScroll.scrollLeft=Math.max(0,t*PPS)}
+function trackCount(){return clips.length?Math.max(...clips.map(c=>c.track))+1:0}
+
+/* =========================================================
+   畫全部
+   ========================================================= */
+function renderAll(){
+  const keepLeft=timelineScroll.scrollLeft,keepTop=timelineScroll.scrollTop;
+  const pad=leftPad();
+  const duration=Math.max(DEFAULT_DURATION,Math.ceil(projectDuration()+8));
+  const tracks=trackCount();
+
+  timelineContent.style.width=(pad*2+duration*PPS)+"px";
+  timelineContent.style.height=(RULER_H+Math.max(260,tracks*TRACK_H+60))+"px";
+  renderRuler(duration,pad);renderTracks(tracks);renderBeats(pad);renderClips(pad);
+  emptyTimeline.style.display=clips.length?"none":"block";
+  updateToolState();updateTimeReadout();
+
+  requestAnimationFrame(()=>{timelineScroll.scrollLeft=keepLeft;timelineScroll.scrollTop=keepTop});
+}
+
+function renderRuler(duration,pad){
+  ruler.innerHTML="";
+  for(let t=0;t<=duration;t++){
+    const m=document.createElement("div");
+    m.className="ruler-mark";
+    m.style.left=(pad+t*PPS)+"px";
+    m.textContent=formatTime(t);
+    ruler.appendChild(m);
+    if(t<duration){
+      const half=document.createElement("div");
+      half.className="ruler-mark minor";
+      half.style.left=(pad+(t+.5)*PPS)+"px";
+      ruler.appendChild(half);
+    }
+  }
+}
+
+function renderTracks(count){
+  tracksBg.innerHTML="";
+  for(let i=0;i<count;i++){
+    const row=document.createElement("div");row.className="track-row";row.style.top=(i*TRACK_H)+"px";tracksBg.appendChild(row);
+  }
+}
+
+function renderBeats(pad){
+  beatsLayer.innerHTML="";
+  beats.forEach(t=>{const b=document.createElement("div");b.className="beat-line";b.style.left=(pad+t*PPS)+"px";beatsLayer.appendChild(b)});
+}
+
+function renderClips(pad){
+  clipsLayer.innerHTML="";
+  clips.forEach(c=>{
+    const a=assets.get(c.assetId);if(!a)return;
+    const el=document.createElement("div");
+    el.className=`clip ${c.type}${c.id===selectedClipId?" selected":""}${c.muted?" muted":""}`;
+    el.dataset.id=c.id;
+    el.style.left=(pad+c.start*PPS)+"px";
+    el.style.top=(RULER_H+c.track*TRACK_H+6)+"px";
+    el.style.width=Math.max(32,clipDuration(c)*PPS)+"px";
+    el.innerHTML=`
+      <div class="clip-title">${escapeHtml(c.name)}</div>
+      <canvas class="wave-canvas"></canvas>
+      <div class="trim-handle left"></div>
+      <div class="trim-handle right"></div>
+      <div class="mute-mark">×</div>`;
+    clipsLayer.appendChild(el);
+    drawWave(el.querySelector("canvas"),c,a);
+    bindClipEvents(el,c);
+  });
+}
+
+function drawWave(canvas,c,a){
+  const w=Math.max(1,Math.floor(canvas.clientWidth)),h=Math.max(1,Math.floor(canvas.clientHeight)),dpr=window.devicePixelRatio||1;
+  canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);
+  const ctx=canvas.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const start=Math.floor((c.trimStart/a.duration)*a.peaks.length);
+  const end=Math.max(start+1,Math.floor((c.trimEnd/a.duration)*a.peaks.length));
+  const mid=h/2;ctx.beginPath();
+  for(let x=0;x<w;x++){
+    const idx=Math.min(a.peaks.length-1,start+Math.floor((x/Math.max(1,w-1))*(end-start)));
+    const y=(a.peaks[idx]||0)*mid*.95;
+    if(x===0)ctx.moveTo(x,mid-y);else ctx.lineTo(x,mid-y);
+  }
+  for(let x=w-1;x>=0;x--){
+    const idx=Math.min(a.peaks.length-1,start+Math.floor((x/Math.max(1,w-1))*(end-start)));
+    const y=(a.peaks[idx]||0)*mid*.95;ctx.lineTo(x,mid+y);
+  }
+  ctx.closePath();ctx.fillStyle="rgba(255,255,255,.94)";ctx.fill();
+}
+
+/* =========================================================
+   選取 / 拖動 / 裁切
+   ========================================================= */
+function bindClipEvents(el,c){
+  el.addEventListener("click",e=>{
+    if(e.target.classList.contains("trim-handle"))return;
+    selectedClipId=c.id;renderAll();
+  });
+
+  el.addEventListener("pointerdown",e=>{
+    if(e.target.classList.contains("trim-handle"))return;
+    if(e.button!==0)return;
+    startClipDrag(e,el,c);
+  });
+
+  el.querySelector(".trim-handle.left").addEventListener("pointerdown",e=>startTrim(e,el,c,"left"));
+  el.querySelector(".trim-handle.right").addEventListener("pointerdown",e=>startTrim(e,el,c,"right"));
+}
+
+function startClipDrag(e,el,c){
+  e.preventDefault();e.stopPropagation();selectedClipId=c.id;
+  const before=snapshot(),sx=e.clientX,sy=e.clientY,oldStart=c.start,oldTrack=c.track;
+  const maxTrack=trackCount();let moved=false;
+  el.classList.add("dragging");
+
+  function move(ev){
+    if(Math.abs(ev.clientX-sx)>3 || Math.abs(ev.clientY-sy)>3)moved=true;
+    c.start=Math.max(0,oldStart+(ev.clientX-sx)/PPS);
+    c.track=Math.max(0,Math.min(maxTrack,oldTrack+Math.round((ev.clientY-sy)/TRACK_H)));
+    const pad=leftPad();
+    el.style.left=(pad+c.start*PPS)+"px";
+    el.style.top=(RULER_H+c.track*TRACK_H+6)+"px";
+  }
+
+  function up(){
+    window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);
+    if(moved){pushCollisions(c);normalizeTracks();pushUndoSnapshot(before)}
+    renderAll();
+  }
+  window.addEventListener("pointermove",move);window.addEventListener("pointerup",up);
+}
+
+function startTrim(e,el,c,side){
+  e.preventDefault();e.stopPropagation();selectedClipId=c.id;
+  const before=snapshot(),sx=e.clientX,oldStart=c.start,oldTrimStart=c.trimStart,oldTrimEnd=c.trimEnd,a=assets.get(c.assetId);
+  let changed=false;
+
+  function move(ev){
+    changed=true;
+    const deltaTimeline=(ev.clientX-sx)/PPS,deltaSource=deltaTimeline*c.speed;
+    if(side==="right"){
+      c.trimEnd=Math.min(a.duration,Math.max(oldTrimStart+MIN_CLIP*c.speed,oldTrimEnd+deltaSource));
+    }else{
+      const earliestTrim=Math.max(0,oldTrimStart-oldStart*c.speed);
+      const newTrim=Math.min(oldTrimEnd-MIN_CLIP*c.speed,Math.max(earliestTrim,oldTrimStart+deltaSource));
+      const shift=(newTrim-oldTrimStart)/c.speed;
+      c.trimStart=newTrim;c.start=oldStart+shift;
+    }
+    const pad=leftPad();el.style.left=(pad+c.start*PPS)+"px";el.style.width=Math.max(32,clipDuration(c)*PPS)+"px";
+    drawWave(el.querySelector("canvas"),c,a);
+  }
+
+  function up(){
+    window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);
+    if(changed){pushCollisions(c);normalizeTracks();pushUndoSnapshot(before)}
+    renderAll();
+  }
+  window.addEventListener("pointermove",move);window.addEventListener("pointerup",up);
+}
+
+/* =========================================================
+   同軌碰撞自動讓位 / 空軌收掉
+   ========================================================= */
+function overlaps(a,b){return a.track===b.track && a.start<clipEnd(b)-.001 && clipEnd(a)>b.start+.001}
+function pushCollisions(moved){
+  const queue=[moved];let guard=0;
+  while(queue.length && guard++<300){
+    const cur=queue.shift(),end=clipEnd(cur);
+    clips.forEach(other=>{
+      if(other.id!==cur.id && other.track===cur.track && overlaps(cur,other)){
+        other.start=end+.02;queue.push(other);
+      }
+    });
+  }
+}
+function normalizeTracks(){
+  if(!clips.length)return;
+  const used=[...new Set(clips.map(c=>c.track))].sort((a,b)=>a-b);
+  const map=new Map(used.map((v,i)=>[v,i]));clips.forEach(c=>c.track=map.get(c.track));
+}
+
+/* =========================================================
+   時間軸移動：白線固定，左右滑時間軸
+   ========================================================= */
+timelineScroll.addEventListener("scroll",()=>{if(!isPlaying){updateTimeReadout();updateToolState()}});
+window.addEventListener("resize",renderAll);
+
+/* 點時間軸空白處，將那個時間移到中央白線 */
+timelineShell.addEventListener("pointerdown",e=>{
+  if(e.target.closest(".clip,button,audio"))return;
+  const contentRect=timelineContent.getBoundingClientRect();
+  const absoluteX=e.clientX-contentRect.left+timelineScroll.scrollLeft;
+  const time=Math.max(0,(absoluteX-leftPad())/PPS);
+  setPlayheadTime(time);updateTimeReadout();
+});
+
+/* =========================================================
+   工具狀態
+   ========================================================= */
+function updateToolState(){
+  const selected=!!getSelected();
+  document.querySelectorAll(".need-clip").forEach(b=>b.disabled=!selected);
+  document.getElementById("undoBtn").disabled=!undoStack.length;
+  document.getElementById("redoBtn").disabled=!redoStack.length;
+}
+function updateTimeReadout(){timeReadout.textContent=`${formatPrecise(getPlayheadTime())} / ${formatPrecise(projectDuration())}`}
+
+/* =========================================================
+   節拍
+   ========================================================= */
+function addBeat(){
+  const before=snapshot(),t=getPlayheadTime();
+  const i=beats.findIndex(x=>Math.abs(x-t)<.12);
+  if(i>=0){beats.splice(i,1);showToast("🚩 已移除附近節拍")}
+  else{beats.push(t);beats.sort((a,b)=>a-b);showToast("🚩 已加入節拍")}
+  pushUndoSnapshot(before);renderAll();
+}
+
+/* =========================================================
+   分割 / 刪除 / 複製 / 靜音
+   ========================================================= */
+function splitSelected(){
+  const c=getSelected();if(!c)return;
+  const t=getPlayheadTime();
+  if(t<=c.start+.02 || t>=clipEnd(c)-.02)return showToast("請把中央白線放在片段中間");
+  const before=snapshot();
+  const sourceSplit=c.trimStart+(t-c.start)*c.speed;
+  const right={...c,id:uid("clip"),trimStart:sourceSplit,start:t};
+  c.trimEnd=sourceSplit;clips.push(right);selectedClipId=right.id;
+  pushUndoSnapshot(before);renderAll();showToast("✂️ 已分割");
+}
+
+function deleteSelected(){
+  const c=getSelected();if(!c)return;
+  const before=snapshot();clips=clips.filter(x=>x.id!==c.id);selectedClipId=null;normalizeTracks();pushUndoSnapshot(before);renderAll();showToast("🗑️ 已刪除");
+}
+
+function copySelected(){
+  const c=getSelected();if(!c)return;
+  const before=snapshot();const n={...c,id:uid("clip"),start:clipEnd(c)+.05};clips.push(n);pushCollisions(n);selectedClipId=n.id;pushUndoSnapshot(before);renderAll();showToast("⧉ 已複製");
+}
+
+function toggleMute(){
+  const c=getSelected();if(!c)return;
+  const before=snapshot();c.muted=!c.muted;pushUndoSnapshot(before);renderAll();showToast(c.muted?"🔇 已靜音":"🔊 已恢復聲音");
+}
+
+/* =========================================================
+   音量 / 淡入淡出 / 變速
+   ========================================================= */
+function editVolume(){
+  const c=getSelected();if(!c)return;
+  openModal("🔊 音量",`
+    <div class="form-group"><label>目前音量：<b id="volumeText">${Math.round(c.volume*100)}%</b></label>
+      <input id="volumeRange" type="range" min="0" max="150" value="${Math.round(c.volume*100)}"></div>
+    <button id="saveVolume" class="primary-btn">確定</button>`);
+  const r=document.getElementById("volumeRange");
+  r.addEventListener("input",()=>document.getElementById("volumeText").textContent=r.value+"%");
+  document.getElementById("saveVolume").addEventListener("click",()=>{
+    const before=snapshot();c.volume=Number(r.value)/100;pushUndoSnapshot(before);closeModal();showToast("🔊 音量已調整");
+  });
+}
+
+function editFade(){
+  const c=getSelected();if(!c)return;
+  openModal("◐ 淡入淡出",`
+    <div class="form-group"><label>淡入秒數</label><input id="fadeIn" type="number" min="0" step="0.1" value="${c.fadeIn}"></div>
+    <div class="form-group"><label>淡出秒數</label><input id="fadeOut" type="number" min="0" step="0.1" value="${c.fadeOut}"></div>
+    <button id="saveFade" class="primary-btn">確定</button>`);
+  document.getElementById("saveFade").addEventListener("click",()=>{
+    const before=snapshot(),d=clipDuration(c);
+    c.fadeIn=Math.min(d,Math.max(0,Number(document.getElementById("fadeIn").value)||0));
+    c.fadeOut=Math.min(d,Math.max(0,Number(document.getElementById("fadeOut").value)||0));
+    pushUndoSnapshot(before);closeModal();showToast("◐ 已設定淡入淡出");
+  });
+}
+
+function editSpeed(){
+  const c=getSelected();if(!c)return;
+  const speeds=[.5,.75,1,1.25,1.5,2];
+  openModal("⏱️ 變速",`
+    <div class="form-group"><label>播放速度</label><select id="speedSelect">${speeds.map(v=>`<option value="${v}" ${c.speed===v?"selected":""}>${v}x</option>`).join("")}</select></div>
+    <button id="saveSpeed" class="primary-btn">確定</button>`);
+  document.getElementById("saveSpeed").addEventListener("click",()=>{
+    const before=snapshot();c.speed=Number(document.getElementById("speedSelect").value);pushCollisions(c);pushUndoSnapshot(before);closeModal();renderAll();showToast("⏱️ 速度已調整");
+  });
+}
+
+/* =========================================================
+   Undo / Redo
+   ========================================================= */
+function snapshot(){return JSON.stringify({clips:clips.map(c=>({...c})),beats:[...beats]})}
+function pushUndoSnapshot(s){undoStack.push(s);if(undoStack.length>80)undoStack.shift();redoStack=[];updateToolState()}
+function saveUndo(){pushUndoSnapshot(snapshot())}
+function restoreSnapshot(s){const x=JSON.parse(s);clips=x.clips||[];beats=x.beats||[];selectedClipId=null;normalizeTracks();renderAll()}
+function undoAction(){
+  if(!undoStack.length)return showToast("沒有可以回上一步的動作");
+  redoStack.push(snapshot());restoreSnapshot(undoStack.pop());showToast("↶ 已回上一步");
+}
+function redoAction(){
+  if(!redoStack.length)return showToast("沒有可以重做的動作");
+  undoStack.push(snapshot());restoreSnapshot(redoStack.pop());showToast("↷ 已重做");
+}
+
+/* =========================================================
+   真正多軌播放
+   ========================================================= */
+async function togglePlay(){
+  if(isPlaying){stopPlayback();return}
+  if(!clips.length)return showToast("請先加入素材");
+  await audioContext.resume();startPlayback();
+}
+
+function startPlayback(){
+  stopPlayback();isPlaying=true;document.getElementById("playBtn").textContent="■";
+  playStartTimeline=getPlayheadTime();playStartCtx=audioContext.currentTime;activeSources=[];
+
+  clips.forEach(c=>{
+    if(c.muted)return;
+    const a=assets.get(c.assetId);if(!a || clipEnd(c)<=playStartTimeline)return;
+    const timelineStart=Math.max(playStartTimeline,c.start);
+    const delay=timelineStart-playStartTimeline;
+    const sourceOffset=c.trimStart+(timelineStart-c.start)*c.speed;
+    const sourceDuration=Math.max(0,c.trimEnd-sourceOffset);if(sourceDuration<=0)return;
+    const source=audioContext.createBufferSource(),gain=audioContext.createGain();
+    source.buffer=a.buffer;source.playbackRate.value=c.speed;source.connect(gain).connect(audioContext.destination);
+    const when=audioContext.currentTime+delay,timelineDur=sourceDuration/c.speed,base=c.volume,relative=timelineStart-c.start;
+    let initial=base;
+    if(c.fadeIn>0 && relative<c.fadeIn)initial=base*(relative/c.fadeIn);
+    if(c.fadeOut>0 && relative>clipDuration(c)-c.fadeOut)initial=Math.min(initial,base*((clipDuration(c)-relative)/c.fadeOut));
+    gain.gain.setValueAtTime(Math.max(0,initial),when);
+    if(c.fadeIn>0 && relative<c.fadeIn)gain.gain.linearRampToValueAtTime(base,when+(c.fadeIn-relative));
+    const fadeOutStart=clipDuration(c)-c.fadeOut;
+    if(c.fadeOut>0){
+      if(relative<fadeOutStart){gain.gain.setValueAtTime(base,when+(fadeOutStart-relative));gain.gain.linearRampToValueAtTime(0,when+timelineDur)}
+      else gain.gain.linearRampToValueAtTime(0,when+timelineDur);
+    }
+    source.start(when,sourceOffset,sourceDuration);activeSources.push(source);
+  });
+  animatePlayback();
+}
+
+function animatePlayback(){
+  if(!isPlaying)return;
+  const t=playStartTimeline+(audioContext.currentTime-playStartCtx);
+  setPlayheadTime(t);updateTimeReadout();
+  if(t>=projectDuration()+.03){stopPlayback();return}
+  playRAF=requestAnimationFrame(animatePlayback);
+}
+
+function stopPlayback(){
+  activeSources.forEach(s=>{try{s.stop()}catch{}});activeSources=[];cancelAnimationFrame(playRAF);
+  if(isPlaying){isPlaying=false;document.getElementById("playBtn").textContent="▶"}
+}
+
+/* =========================================================
+   完成：合成 WAV + 自動下載 + 成品 + 草稿
+   ========================================================= */
+async function finishProject(){
+  if(!clips.length)return showToast("請先加入素材");
+  stopPlayback();
+  const def=makeDefaultName();
+  const name=(prompt("請輸入作品名稱",def)||def).trim()||def;
+  try{
+    showToast("正在合成成品…");
+    const wavBlob=await renderMixToWav();
+    const now=new Date(),productId=uid("product"),draftId=uid("draft"),assetRecords=await collectProjectAssets();
+    await dbPut("products",{id:productId,name,createdAt:now.toISOString(),duration:projectDuration(),blob:wavBlob});
+    await dbPut("drafts",{id:draftId,name,createdAt:now.toISOString(),duration:projectDuration(),clips:clips.map(c=>({...c})),beats:[...beats],assets:assetRecords,finalBlob:wavBlob,productId});
+    downloadBlob(wavBlob,name+".wav");
+    showToast("✅ 已下載，並新增成品與草稿");
+  }catch(e){console.error(e);showToast("⚠️ 完成失敗，請再試一次")}
+}
+
+async function renderMixToWav(){
+  const duration=Math.max(.1,projectDuration()),rate=44100;
+  const OfflineCtx=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+  if(!OfflineCtx)throw new Error("OfflineAudioContext unsupported");
+  const offline=new OfflineCtx(2,Math.ceil(duration*rate),rate);
+
+  clips.forEach(c=>{
+    if(c.muted)return;
+    const a=assets.get(c.assetId);if(!a)return;
+    const source=offline.createBufferSource(),gain=offline.createGain();
+    source.buffer=a.buffer;source.playbackRate.value=c.speed;source.connect(gain).connect(offline.destination);
+    const start=c.start,d=clipDuration(c),g=c.volume;
+    gain.gain.setValueAtTime(c.fadeIn>0?0:g,start);
+    if(c.fadeIn>0)gain.gain.linearRampToValueAtTime(g,start+Math.min(c.fadeIn,d));
+    if(c.fadeOut>0){const fs=Math.max(start,start+d-c.fadeOut);gain.gain.setValueAtTime(g,fs);gain.gain.linearRampToValueAtTime(0,start+d)}
+    source.start(start,c.trimStart,c.trimEnd-c.trimStart);
+  });
+  return audioBufferToWavBlob(await offline.startRendering());
+}
+
+function audioBufferToWavBlob(buffer){
+  const channels=buffer.numberOfChannels,rate=buffer.sampleRate,length=buffer.length,block=channels*2;
+  const ab=new ArrayBuffer(44+length*block),view=new DataView(ab);let p=0;
+  const str=s=>{for(let i=0;i<s.length;i++)view.setUint8(p++,s.charCodeAt(i))};
+  str("RIFF");view.setUint32(p,36+length*block,true);p+=4;str("WAVE");str("fmt ");view.setUint32(p,16,true);p+=4;
+  view.setUint16(p,1,true);p+=2;view.setUint16(p,channels,true);p+=2;view.setUint32(p,rate,true);p+=4;
+  view.setUint32(p,rate*block,true);p+=4;view.setUint16(p,block,true);p+=2;view.setUint16(p,16,true);p+=2;str("data");view.setUint32(p,length*block,true);p+=4;
+  const data=Array.from({length:channels},(_,ch)=>buffer.getChannelData(ch));
+  for(let i=0;i<length;i++)for(let ch=0;ch<channels;ch++){
+    const s=Math.max(-1,Math.min(1,data[ch][i]));view.setInt16(p,s<0?s*0x8000:s*0x7fff,true);p+=2;
+  }
+  return new Blob([ab],{type:"audio/wav"});
+}
+
+/* =========================================================
+   草稿：新增保存，不覆蓋，不刪除
+   ========================================================= */
 async function showDrafts(){
-
-  const list =
-
-    (
-      await dbGetAll(
-        "drafts"
-      )
-    )
-
-    .sort(
-      (a,b) =>
-        b.createdAt
-          .localeCompare(
-            a.createdAt
-          )
-    );
-
-
-  openModal(
-
-    "📝 草稿",
-
-    `
-
-    <div class="storage-note">
-
-      草稿會保存在目前這台裝置／
-      這個瀏覽器。
-
-      <br>
-
-      這裡不提供刪除。
-
-    </div>
-
-
-    <button
-      id="saveDraftNow"
-      class="primary-btn"
-      style="margin-bottom:12px"
-    >
-      ＋ 保留目前草稿
-    </button>
-
-
-    ${
-
-      list.length
-
-        ?
-
-        list
-          .map(
-            d => `
-
-            <div class="list-row">
-
-              <div class="list-info">
-
-                <div class="list-name">
-                  ${escapeHtml(d.name)}
-                </div>
-
-                <div class="list-meta">
-
-                  ${
-                    new Date(
-                      d.createdAt
-                    )
-                    .toLocaleString()
-                  }
-
-                  ｜
-
-                  ${formatPrecise(d.duration)}
-
-                </div>
-
-              </div>
-
-
-              <button
-                class="row-btn"
-                data-open-draft="${d.id}"
-              >
-                開啟繼續剪輯
-              </button>
-
-
-              ${
-                d.finalBlob
-
-                  ?
-
-                  `
-
-                  <button
-                    class="row-btn"
-                    data-download-draft="${d.id}"
-                  >
-                    下載成品
-                  </button>
-
-                  `
-
-                  :
-
-                  ""
-              }
-
-            </div>
-
-            `
-          )
-
-          .join("")
-
-        :
-
-        `
-
-        <div class="storage-note">
-          目前還沒有草稿。
+  const list=(await dbGetAll("drafts")).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+  openModal("📝 草稿",`
+    <div class="panel-note">草稿會保存在目前這支手機的這個瀏覽器。每次「保留」都新增一份，不覆蓋舊草稿；不提供刪除。</div>
+    <button id="saveDraftNow" class="primary-btn">＋ 保留目前草稿</button>
+    <div style="height:10px"></div>
+    ${list.length?list.map(d=>`
+      <div class="list-row">
+        <div class="list-name">${escapeHtml(d.name)}</div>
+        <div class="list-meta">${new Date(d.createdAt).toLocaleString()} ｜ ${formatPrecise(d.duration)}</div>
+        <div class="list-actions">
+          <button class="row-btn" data-open-draft="${d.id}">開啟繼續剪輯</button>
+          ${d.finalBlob?`<button class="row-btn" data-download-draft="${d.id}">下載成品</button>`:""}
         </div>
+      </div>`).join(""):`<div class="panel-note">目前還沒有草稿。</div>`}
+  `);
 
-        `
-
-    }
-
-    `
-
-  );
-
-
-  document
-    .getElementById(
-      "saveDraftNow"
-    )
-    .addEventListener(
-      "click",
-      saveCurrentDraft
-    );
-
-
-  document
-    .querySelectorAll(
-      "[data-open-draft]"
-    )
-    .forEach(
-      b => {
-
-        b.addEventListener(
-          "click",
-          () => {
-
-            loadDraft(
-              b.dataset.openDraft
-            );
-
-          }
-        );
-
-      }
-    );
-
-
-  document
-    .querySelectorAll(
-      "[data-download-draft]"
-    )
-    .forEach(
-      b => {
-
-        b.addEventListener(
-          "click",
-          async () => {
-
-            const d =
-              await dbGet(
-
-                "drafts",
-
-                b.dataset
-                  .downloadDraft
-
-              );
-
-
-            if(d?.finalBlob){
-
-              downloadBlob(
-
-                d.finalBlob,
-
-                d.name +
-                ".wav"
-
-              );
-
-            }
-
-          }
-        );
-
-      }
-    );
-
+  document.getElementById("saveDraftNow").addEventListener("click",saveCurrentDraft);
+  document.querySelectorAll("[data-open-draft]").forEach(b=>b.addEventListener("click",()=>loadDraft(b.dataset.openDraft)));
+  document.querySelectorAll("[data-download-draft]").forEach(b=>b.addEventListener("click",async()=>{
+    const d=await dbGet("drafts",b.dataset.downloadDraft);if(d?.finalBlob)downloadBlob(d.finalBlob,d.name+".wav");
+  }));
 }
-
-
-/* =========================================================
-   48｜保留目前草稿
-   ========================================================= */
 
 async function saveCurrentDraft(){
-
-  if(!clips.length){
-
-    return showToast(
-      "目前沒有可以保存的剪輯內容"
-    );
-
-  }
-
-
-  const def =
-    makeDefaultName() +
-    "_草稿";
-
-
-  const name =
-
-    (
-      prompt(
-        "草稿名稱",
-        def
-      )
-      ||
-      def
-    )
-    .trim()
-    ||
-    def;
-
-
-  const assetRecords =
-    await collectProjectAssets();
-
-
-  await dbPut(
-
-    "drafts",
-
-    {
-
-      id:
-        uid("draft"),
-
-      name:name,
-
-      createdAt:
-        new Date()
-          .toISOString(),
-
-      duration:
-        projectDuration(),
-
-      clips:
-        clips.map(
-          c => ({
-            ...c
-          })
-        ),
-
-      beats:
-        [...beats],
-
-      assets:
-        assetRecords,
-
-      finalBlob:null,
-
-      productId:null
-
-    }
-
-  );
-
-
-  closeModal();
-
-
-  showToast(
-    "📝 已保留新草稿，不覆蓋舊草稿"
-  );
-
+  if(!clips.length)return showToast("目前沒有可以保存的剪輯內容");
+  const def=makeDefaultName()+"_草稿";
+  const name=(prompt("草稿名稱",def)||def).trim()||def;
+  const assetRecords=await collectProjectAssets();
+  await dbPut("drafts",{
+    id:uid("draft"),name,createdAt:new Date().toISOString(),duration:projectDuration(),
+    clips:clips.map(c=>({...c})),beats:[...beats],assets:assetRecords,finalBlob:null,productId:null
+  });
+  closeModal();showToast("📝 已保留新草稿，不覆蓋舊草稿");
 }
-
-
-/* =========================================================
-   49｜草稿保存素材
-   ========================================================= */
 
 async function collectProjectAssets(){
-
-  const used =
-
-    [
-      ...new Set(
-        clips.map(
-          c =>
-            c.assetId
-        )
-      )
-    ];
-
-
-  const arr = [];
-
-
+  const used=[...new Set(clips.map(c=>c.assetId))],arr=[];
   for(const id of used){
-
-    const a =
-      assets.get(id);
-
-
-    if(a){
-
-      arr.push({
-
-        id:a.id,
-
-        name:a.name,
-
-        type:a.type,
-
-        blob:a.blob,
-
-        sourceUrl:
-          a.sourceUrl ||
-          null
-
-      });
-
-    }
-
+    const a=assets.get(id);if(a)arr.push({id:a.id,name:a.name,type:a.type,blob:a.blob,sourceUrl:a.sourceUrl||null,materialId:a.materialId||null});
   }
-
-
   return arr;
-
 }
-
-
-/* =========================================================
-   50｜開啟草稿
-   ========================================================= */
 
 async function loadDraft(id){
-
-  const d =
-    await dbGet(
-      "drafts",
-      id
-    );
-
-
-  if(!d){
-    return;
-  }
-
-
-  stopPlayback();
-
-  assets.clear();
-
-
+  const d=await dbGet("drafts",id);if(!d)return;
+  stopPlayback();assets.clear();
   for(const a of d.assets){
-
-    const buffer =
-      await audioContext
-        .decodeAudioData(
-          (
-            await a.blob
-              .arrayBuffer()
-          )
-          .slice(0)
-        );
-
-
-    assets.set(
-
-      a.id,
-
-      {
-
-        ...a,
-
-        buffer:buffer,
-
-        duration:
-          buffer.duration,
-
-        peaks:
-          createPeaks(
-            buffer,
-            5000
-          )
-
-      }
-
-    );
-
+    const buffer=await audioContext.decodeAudioData((await a.blob.arrayBuffer()).slice(0));
+    assets.set(a.id,{...a,buffer,duration:buffer.duration,peaks:createPeaks(buffer,6000)});
   }
-
-
-  clips =
-    d.clips.map(
-      c => ({
-        ...c
-      })
-    );
-
-
-  beats =
-    [
-      ...(
-        d.beats ||
-        []
-      )
-    ];
-
-
-  selectedClipId =
-    null;
-
-
-  undoStack = [];
-
-  redoStack = [];
-
-
-  closeModal();
-
-
-  normalizeTracks();
-
-  renderAll();
-
-  setPlayheadTime(0);
-
-
-  showToast(
-    "📝 已開啟草稿，可繼續剪輯"
-  );
-
+  clips=(d.clips||[]).map(c=>({...c}));beats=[...(d.beats||[])];selectedClipId=null;undoStack=[];redoStack=[];
+  closeModal();normalizeTracks();renderAll();setPlayheadTime(0);showToast("📝 已開啟草稿，可繼續剪輯");
 }
 
-
 /* =========================================================
-   51｜成品
+   成品：試聽 / 改檔名 / 下載，不刪除
    ========================================================= */
-
 async function showProducts(){
-
-  const list =
-
-    (
-      await dbGetAll(
-        "products"
-      )
-    )
-
-    .sort(
-      (a,b) =>
-        b.createdAt
-          .localeCompare(
-            a.createdAt
-          )
-    );
-
-
-  openModal(
-
-    "🎵 成品",
-
-    `
-
-    <div class="storage-note">
-
-      成品保存在目前這台裝置／
-      這個瀏覽器。
-
-      <br>
-
-      可試聽、改檔名、下載；
-
-      不提供刪除。
-
-    </div>
-
-
-    ${
-
-      list.length
-
-        ?
-
-        list
-          .map(
-            p => {
-
-              const u =
-                URL.createObjectURL(
-                  p.blob
-                );
-
-
-              return `
-
-              <div class="list-row">
-
-                <div class="list-info">
-
-                  <div class="list-name">
-                    ${escapeHtml(p.name)}
-                  </div>
-
-                  <div class="list-meta">
-
-                    ${
-                      new Date(
-                        p.createdAt
-                      )
-                      .toLocaleString()
-                    }
-
-                    ｜
-
-                    ${formatPrecise(p.duration)}
-
-                  </div>
-
-                  <audio
-                    controls
-                    src="${u}"
-                  ></audio>
-
-                </div>
-
-
-                <button
-                  class="row-btn"
-                  data-rename-product="${p.id}"
-                >
-                  ✏️ 改檔名
-                </button>
-
-
-                <button
-                  class="row-btn"
-                  data-download-product="${p.id}"
-                >
-                  ⬇️ 下載
-                </button>
-
-              </div>
-
-              `;
-
-            }
-          )
-
-          .join("")
-
-        :
-
-        `
-
-        <div class="storage-note">
-          目前還沒有成品。
+  const list=(await dbGetAll("products")).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+  openModal("🎵 成品",`
+    <div class="panel-note">成品保存在目前這支手機的這個瀏覽器。可以試聽、改檔名、下載；不提供刪除。</div>
+    ${list.length?list.map(p=>{
+      const url=URL.createObjectURL(p.blob);
+      return `<div class="list-row">
+        <div class="list-name">${escapeHtml(p.name)}</div>
+        <div class="list-meta">${new Date(p.createdAt).toLocaleString()} ｜ ${formatPrecise(p.duration)}</div>
+        <audio controls src="${url}"></audio>
+        <div class="list-actions">
+          <button class="row-btn" data-rename-product="${p.id}">✏️ 改檔名</button>
+          <button class="row-btn" data-download-product="${p.id}">⬇️ 下載</button>
         </div>
+      </div>`;
+    }).join(""):`<div class="panel-note">目前還沒有成品。</div>`}
+  `);
 
-        `
-
-    }
-
-    `
-
-  );
-
-
-  document
-    .querySelectorAll(
-      "[data-download-product]"
-    )
-    .forEach(
-      b => {
-
-        b.addEventListener(
-          "click",
-          async () => {
-
-            const p =
-              await dbGet(
-
-                "products",
-
-                b.dataset
-                  .downloadProduct
-
-              );
-
-
-            if(p){
-
-              downloadBlob(
-
-                p.blob,
-
-                p.name +
-                ".wav"
-
-              );
-
-            }
-
-          }
-        );
-
-      }
-    );
-
-
-  document
-    .querySelectorAll(
-      "[data-rename-product]"
-    )
-    .forEach(
-      b => {
-
-        b.addEventListener(
-          "click",
-          async () => {
-
-            const p =
-              await dbGet(
-
-                "products",
-
-                b.dataset
-                  .renameProduct
-
-              );
-
-
-            if(!p){
-              return;
-            }
-
-
-            const n =
-              prompt(
-
-                "輸入新的成品名稱",
-
-                p.name
-
-              );
-
-
-            if(
-              !n ||
-              !n.trim()
-            ){
-              return;
-            }
-
-
-            p.name =
-              n.trim();
-
-
-            await dbPut(
-              "products",
-              p
-            );
-
-
-            showProducts();
-
-          }
-        );
-
-      }
-    );
-
+  document.querySelectorAll("[data-download-product]").forEach(b=>b.addEventListener("click",async()=>{
+    const p=await dbGet("products",b.dataset.downloadProduct);if(p)downloadBlob(p.blob,p.name+".wav");
+  }));
+  document.querySelectorAll("[data-rename-product]").forEach(b=>b.addEventListener("click",async()=>{
+    const p=await dbGet("products",b.dataset.renameProduct);if(!p)return;
+    const n=prompt("輸入新的成品名稱",p.name);if(!n||!n.trim())return;
+    p.name=n.trim();await dbPut("products",p);showProducts();
+  }));
 }
 
-
 /* =========================================================
-   52｜IndexedDB
+   IndexedDB
    ========================================================= */
-
-const DB_NAME =
-  "taekwondo_editor_v2";
-
-const DB_VERSION =
-  1;
-
-
+const DB_NAME="taekwondo_editor_mobile_v1",DB_VERSION=1;
 function openDB(){
-
-  return new Promise(
-
-    (
-      resolve,
-      reject
-    ) => {
-
-      const req =
-        indexedDB.open(
-
-          DB_NAME,
-
-          DB_VERSION
-
-        );
-
-
-      req.onupgradeneeded =
-        () => {
-
-          const db =
-            req.result;
-
-
-          if(
-            !db.objectStoreNames
-              .contains(
-                "drafts"
-              )
-          ){
-
-            db.createObjectStore(
-
-              "drafts",
-
-              {
-                keyPath:"id"
-              }
-
-            );
-
-          }
-
-
-          if(
-            !db.objectStoreNames
-              .contains(
-                "products"
-              )
-          ){
-
-            db.createObjectStore(
-
-              "products",
-
-              {
-                keyPath:"id"
-              }
-
-            );
-
-          }
-
-        };
-
-
-      req.onsuccess =
-        () => {
-
-          resolve(
-            req.result
-          );
-
-        };
-
-
-      req.onerror =
-        () => {
-
-          reject(
-            req.error
-          );
-
-        };
-
-    }
-
-  );
-
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=()=>{
+      const db=req.result;
+      if(!db.objectStoreNames.contains("drafts"))db.createObjectStore("drafts",{keyPath:"id"});
+      if(!db.objectStoreNames.contains("products"))db.createObjectStore("products",{keyPath:"id"});
+    };
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
 }
-
-
-/* =========================================================
-   53｜資料庫寫入
-   ========================================================= */
-
-async function dbPut(
-  store,
-  value
-){
-
-  const db =
-    await openDB();
-
-
-  return new Promise(
-
-    (
-      resolve,
-      reject
-    ) => {
-
-      const tx =
-        db.transaction(
-          store,
-          "readwrite"
-        );
-
-
-      tx
-        .objectStore(store)
-        .put(value);
-
-
-      tx.oncomplete =
-        () => resolve();
-
-
-      tx.onerror =
-        () => reject(
-          tx.error
-        );
-
-    }
-
-  );
-
+async function dbPut(store,value){
+  const db=await openDB();return new Promise((resolve,reject)=>{
+    const tx=db.transaction(store,"readwrite");tx.objectStore(store).put(value);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);
+  });
 }
-
-
-/* =========================================================
-   54｜資料庫全部
-   ========================================================= */
-
 async function dbGetAll(store){
-
-  const db =
-    await openDB();
-
-
-  return new Promise(
-
-    (
-      resolve,
-      reject
-    ) => {
-
-      const req =
-        db
-          .transaction(
-            store,
-            "readonly"
-          )
-          .objectStore(store)
-          .getAll();
-
-
-      req.onsuccess =
-        () => {
-
-          resolve(
-            req.result
-          );
-
-        };
-
-
-      req.onerror =
-        () => {
-
-          reject(
-            req.error
-          );
-
-        };
-
-    }
-
-  );
-
+  const db=await openDB();return new Promise((resolve,reject)=>{
+    const req=db.transaction(store,"readonly").objectStore(store).getAll();req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
 }
-
+async function dbGet(store,id){
+  const db=await openDB();return new Promise((resolve,reject)=>{
+    const req=db.transaction(store,"readonly").objectStore(store).get(id);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+}
 
 /* =========================================================
-   55｜資料庫單筆
+   Modal / Toast / Utils
    ========================================================= */
-
-async function dbGet(
-  store,
-  id
-){
-
-  const db =
-    await openDB();
-
-
-  return new Promise(
-
-    (
-      resolve,
-      reject
-    ) => {
-
-      const req =
-        db
-          .transaction(
-            store,
-            "readonly"
-          )
-          .objectStore(store)
-          .get(id);
-
-
-      req.onsuccess =
-        () => {
-
-          resolve(
-            req.result
-          );
-
-        };
-
-
-      req.onerror =
-        () => {
-
-          reject(
-            req.error
-          );
-
-        };
-
-    }
-
-  );
-
+function openModal(title,html){
+  document.getElementById("modalTitle").textContent=title;
+  document.getElementById("modalBody").innerHTML=html;
+  document.getElementById("modalBackdrop").classList.add("show");
 }
-
-
-/* =========================================================
-   56｜Modal
-   ========================================================= */
-
-function openModal(
-  title,
-  html
-){
-
-  document
-    .getElementById(
-      "modalTitle"
-    )
-    .textContent =
-      title;
-
-
-  document
-    .getElementById(
-      "modalBody"
-    )
-    .innerHTML =
-      html;
-
-
-  document
-    .getElementById(
-      "modalBackdrop"
-    )
-    .classList
-    .add(
-      "show"
-    );
-
-}
-
-
-function closeModal(){
-
-  document
-    .getElementById(
-      "modalBackdrop"
-    )
-    .classList
-    .remove(
-      "show"
-    );
-
-}
-
-
-document
-  .getElementById(
-    "modalClose"
-  )
-  .addEventListener(
-    "click",
-    closeModal
-  );
-
-
-document
-  .getElementById(
-    "modalBackdrop"
-  )
-  .addEventListener(
-    "click",
-    e => {
-
-      if(
-        e.target.id ===
-        "modalBackdrop"
-      ){
-
-        closeModal();
-
-      }
-
-    }
-  );
-
-
-/* =========================================================
-   57｜提示
-   ========================================================= */
+function closeModal(){document.getElementById("modalBackdrop").classList.remove("show")}
+document.getElementById("modalClose").addEventListener("click",closeModal);
+document.getElementById("modalBackdrop").addEventListener("click",e=>{if(e.target.id==="modalBackdrop")closeModal()});
 
 function showToast(text){
-
-  const t =
-    document.getElementById(
-      "toast"
-    );
-
-
-  t.textContent =
-    text;
-
-
-  t.style.display =
-    "block";
-
-
-  clearTimeout(
-    showToast.timer
-  );
-
-
-  showToast.timer =
-    setTimeout(
-      () => {
-
-        t.style.display =
-          "none";
-
-      },
-      1800
-    );
-
+  const t=document.getElementById("toast");t.textContent=text;t.style.display="block";clearTimeout(showToast.timer);
+  showToast.timer=setTimeout(()=>t.style.display="none",1800);
 }
-
-
-/* =========================================================
-   58｜ID
-   ========================================================= */
-
-function uid(
-  prefix="id"
-){
-
-  return (
-
-    `${prefix}_${Date.now()}_${
-
-      Math
-        .random()
-        .toString(36)
-        .slice(2,8)
-
-    }`
-
-  );
-
-}
-
-
-/* =========================================================
-   59｜安全文字
-   ========================================================= */
-
-function escapeHtml(t){
-
-  return String(t)
-
-    .replaceAll(
-      "&",
-      "&amp;"
-    )
-
-    .replaceAll(
-      "<",
-      "&lt;"
-    )
-
-    .replaceAll(
-      ">",
-      "&gt;"
-    )
-
-    .replaceAll(
-      '"',
-      "&quot;"
-    )
-
-    .replaceAll(
-      "'",
-      "&#039;"
-    );
-
-}
-
-
-/* =========================================================
-   60｜時間格式
-   ========================================================= */
-
-function formatTime(sec){
-
-  sec =
-    Math.max(
-      0,
-      sec ||
-      0
-    );
-
-
-  const m =
-    Math.floor(
-      sec /
-      60
-    );
-
-
-  const s =
-    Math.floor(
-      sec %
-      60
-    );
-
-
-  return (
-
-    `${
-
-      String(m)
-        .padStart(
-          2,
-          "0"
-        )
-
-    }:${
-
-      String(s)
-        .padStart(
-          2,
-          "0"
-        )
-
-    }`
-
-  );
-
-}
-
-
-function formatPrecise(sec){
-
-  sec =
-    Math.max(
-      0,
-      sec ||
-      0
-    );
-
-
-  const m =
-    Math.floor(
-      sec /
-      60
-    );
-
-
-  const s =
-    (
-      sec %
-      60
-    )
-    .toFixed(1)
-    .padStart(
-      4,
-      "0"
-    );
-
-
-  return (
-
-    `${
-
-      String(m)
-        .padStart(
-          2,
-          "0"
-        )
-
-    }:${s}`
-
-  );
-
-}
-
-
-/* =========================================================
-   61｜作品名稱
-   ========================================================= */
-
+function uid(prefix="id"){return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`}
+function escapeHtml(t){return String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+function formatTime(sec){sec=Math.max(0,sec||0);const m=Math.floor(sec/60),s=Math.floor(sec%60);return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`}
+function formatPrecise(sec){sec=Math.max(0,sec||0);const m=Math.floor(sec/60),s=(sec%60).toFixed(1).padStart(4,"0");return `${String(m).padStart(2,"0")}:${s}`}
 function makeDefaultName(){
-
-  const d =
-    new Date();
-
-
-  return (
-
-    `自由品勢作品_${
-
-      d.getFullYear()
-
-    }${
-
-      String(
-        d.getMonth() +
-        1
-      )
-      .padStart(
-        2,
-        "0"
-      )
-
-    }${
-
-      String(
-        d.getDate()
-      )
-      .padStart(
-        2,
-        "0"
-      )
-
-    }_${
-
-      String(
-        d.getHours()
-      )
-      .padStart(
-        2,
-        "0"
-      )
-
-    }${
-
-      String(
-        d.getMinutes()
-      )
-      .padStart(
-        2,
-        "0"
-      )
-
-    }`
-
-  );
-
+  const d=new Date();return `自由品勢作品_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;
+}
+function downloadBlob(blob,name){
+  const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2500);
 }
 
-
 /* =========================================================
-   62｜下載
+   啟動
    ========================================================= */
-
-function downloadBlob(
-  blob,
-  name
-){
-
-  const url =
-    URL.createObjectURL(
-      blob
-    );
-
-
-  const a =
-    document.createElement(
-      "a"
-    );
-
-
-  a.href =
-    url;
-
-
-  a.download =
-    name;
-
-
-  document.body
-    .appendChild(a);
-
-
-  a.click();
-
-
-  a.remove();
-
-
-  setTimeout(
-    () => {
-
-      URL.revokeObjectURL(
-        url
-      );
-
-    },
-    2000
-  );
-
-}
-
-
-/* =========================================================
-   63｜啟動
-   ========================================================= */
-
 renderAll();
-
+loadLibraryManifest().catch(()=>{}); // 預先讀素材庫，按分類時更快
 </script>
-
 </body>
 </html>
