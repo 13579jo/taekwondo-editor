@@ -76,7 +76,7 @@ button:disabled{cursor:default}
 .beats-layer{position:absolute;left:0;top:var(--ruler-h);right:0;bottom:0;z-index:6;pointer-events:none}
 .beat-line{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,212,71,.75)}
 .beat-line::before{content:"🚩";position:absolute;top:1px;left:-8px;font-size:13px}
-.fixed-playhead{position:absolute;left:50%;top:var(--ruler-h);bottom:0;width:3px;background:#fff;z-index:50;pointer-events:none;box-shadow:0 0 5px #000}
+.fixed-playhead{position:absolute;left:0;top:var(--ruler-h);bottom:0;width:3px;background:#fff;z-index:50;pointer-events:none;box-shadow:0 0 5px #000}
 .fixed-playhead::before{content:"";position:absolute;top:-5px;left:-5px;width:13px;height:13px;border-radius:3px 3px 8px 8px;background:#fff}
 .empty-timeline{position:absolute;left:14px;right:14px;top:104px;text-align:center;color:#747c8b;font-size:13px;line-height:1.75;z-index:2}
 
@@ -854,7 +854,8 @@ function clipDuration(c){return Math.max(MIN_CLIP,(c.trimEnd-c.trimStart)/c.spee
 function clipEnd(c){return c.start+clipDuration(c)}
 function projectDuration(){return Math.max(0,...clips.map(clipEnd),0)}
 function getSelected(){return clips.find(c=>c.id===selectedClipId)||null}
-function leftPad(){return timelineScroll.clientWidth/2}
+function leftPad(){return 0}
+function rightPad(){return timelineScroll.clientWidth}
 function getPlayheadTime(){
   const max=projectDuration();
   return Math.min(max,Math.max(0,timelineScroll.scrollLeft/PPS));
@@ -872,12 +873,13 @@ function trackCount(){return clips.length?Math.max(...clips.map(c=>c.track))+1:0
 function renderAll(){
   const keepLeft=timelineScroll.scrollLeft,keepTop=timelineScroll.scrollTop;
   const pad=leftPad();
+  const tailPad=rightPad();
   const duration=projectDuration();
   const rulerDuration=Math.ceil(duration);
   const tracks=trackCount();
 
-  // 內容寬度只到目前最晚結束的片段；最右端會剛好停在中央白線
-  timelineContent.style.width=(pad*2+duration*PPS)+"px";
+  // 白線從最左邊開始，所以左邊不留空；右邊保留一個可滑區，讓最後尾端也能對到白線
+  timelineContent.style.width=(pad+duration*PPS+tailPad)+"px";
   timelineContent.style.height=(RULER_H+Math.max(260,tracks*TRACK_H+60))+"px";
   renderRuler(rulerDuration,pad);renderTracks(tracks);renderBeats(pad);renderClips(pad);
   emptyTimeline.style.display=clips.length?"none":"block";
@@ -947,6 +949,14 @@ function drawWave(canvas,c,a){
   const ctx=canvas.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
   const start=Math.floor((c.trimStart/a.duration)*a.peaks.length);
   const end=Math.max(start+1,Math.floor((c.trimEnd/a.duration)*a.peaks.length));
+
+  // 視覺上把真正有聲音的區段撐滿整個片段，避免前後看起來像留空沒接上
+  let visStart=start, visEnd=end-1;
+  const threshold=0.012;
+  while(visStart<end-1 && (a.peaks[visStart]||0)<threshold) visStart++;
+  while(visEnd>visStart && (a.peaks[visEnd]||0)<threshold) visEnd--;
+  if(visEnd-visStart<2){visStart=start;visEnd=end-1;}
+
   const mid=h/2;
   ctx.beginPath();
   ctx.moveTo(0,mid);
@@ -956,12 +966,12 @@ function drawWave(canvas,c,a){
   ctx.stroke();
   ctx.beginPath();
   for(let x=0;x<w;x++){
-    const idx=Math.min(a.peaks.length-1,start+Math.floor((x/Math.max(1,w-1))*(end-start)));
+    const idx=Math.min(a.peaks.length-1,visStart+Math.floor((x/Math.max(1,w-1))*Math.max(1,visEnd-visStart)));
     const y=(a.peaks[idx]||0)*mid*.95;
     if(x===0)ctx.moveTo(x,mid-y);else ctx.lineTo(x,mid-y);
   }
   for(let x=w-1;x>=0;x--){
-    const idx=Math.min(a.peaks.length-1,start+Math.floor((x/Math.max(1,w-1))*(end-start)));
+    const idx=Math.min(a.peaks.length-1,visStart+Math.floor((x/Math.max(1,w-1))*Math.max(1,visEnd-visStart)));
     const y=(a.peaks[idx]||0)*mid*.95;ctx.lineTo(x,mid+y);
   }
   ctx.closePath();ctx.fillStyle="rgba(255,255,255,.94)";ctx.fill();
