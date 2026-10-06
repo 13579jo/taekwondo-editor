@@ -338,7 +338,11 @@ async function toggleFullscreen(){
 
 /* =========================================================
    自動讀取 GitHub 素材庫「全部音訊檔」
-   未來新增素材，只要放進素材庫 Repo，重新整理就會出現
+   分類規則完全依照目前素材庫實際檔案結構：
+   1. musicXX / 自由品勢音樂XX → 音樂
+   2. 拼接素材資料夾，或 XX_拼接素材 → 拼接
+   3. 根目錄 XX_名稱 的音訊 → 音效
+   不再把「無法判斷的音訊」亂塞進音樂。
    ========================================================= */
 async function loadLibraryManifest(){
   if(libraryManifest) return libraryManifest;
@@ -347,50 +351,86 @@ async function loadLibraryManifest(){
   libraryManifestPromise=(async()=>{
     let paths=[];
 
-    /* 第一選擇：GitHub repository tree，自動拿全部檔案 */
+    /* 第一選擇：GitHub repository tree，取得素材庫目前真正存在的全部音訊檔 */
     try{
-      const r=await fetch(REPO_TREE_API,{headers:{"Accept":"application/vnd.github+json"},cache:"no-store"});
+      const r=await fetch(REPO_TREE_API,{
+        headers:{"Accept":"application/vnd.github+json"},
+        cache:"no-store"
+      });
+
       if(r.ok){
         const data=await r.json();
+
         paths=(data.tree||[])
           .filter(x=>x.type==="blob" && AUDIO_EXT.test(x.path||""))
           .map(x=>x.path);
       }
-    }catch(e){console.warn("GitHub tree 讀取失敗",e)}
+    }catch(e){
+      console.warn("GitHub tree 讀取失敗",e);
+    }
 
-    /* 第二選擇：如果 API 暫時失敗，就從素材庫首頁抓出音訊連結 */
+    /*
+      第二選擇：
+      若 GitHub API 暫時不可用，就讀素材庫首頁目前的 music / effect 資料，
+      並依首頁的「拼接數量」建立拼接清單。
+    */
     if(!paths.length){
       try{
         const r=await fetch(LIBRARY_BASE,{cache:"no-store"});
+
         if(r.ok){
           const html=await r.text();
-          const re=/["'`]([^"'`<>]+\.(?:mp3|wav|m4a|aac|ogg|flac))["'`]/gi;
-          const set=new Set();
-          let m;
-          while((m=re.exec(html))){
-            let p=m[1];
-            try{
-              const u=new URL(p,LIBRARY_BASE);
-              if(u.origin===location.origin && u.pathname.includes("/taekwondo-music-library/")){
-                p=decodeURIComponent(u.pathname.split("/taekwondo-music-library/")[1]||"");
-                if(p && AUDIO_EXT.test(p)) set.add(p);
-              }
-            }catch{}
+          const fromPage=parseLibraryPage(html);
+
+          if(
+            fromPage.music.length ||
+            fromPage.splice.length ||
+            fromPage.effect.length
+          ){
+            libraryManifest=fromPage;
+
+            Object.values(libraryManifest)
+              .forEach(arr=>arr.sort(naturalMaterialSort));
+
+            return libraryManifest;
           }
-          paths=[...set];
         }
-      }catch(e){console.warn("素材庫首頁讀取失敗",e)}
+      }catch(e){
+        console.warn("素材庫首頁讀取失敗",e);
+      }
     }
 
-    const all=paths
+    const candidates=paths
       .filter(Boolean)
-      .filter(p=>!p.startsWith("."))
+      .filter(p=>!String(p).startsWith("."))
       .map(path=>materialFromPath(path))
       .filter(Boolean);
 
-    /* 去除重複 */
+    /*
+      用 type + id 去除重複。
+      拼接若同時存在「拼接素材/XX_拼接素材.mp3」與根目錄備份，
+      優先使用「拼接素材」資料夾內的版本。
+    */
     const unique=new Map();
-    all.forEach(m=>unique.set(m.path,m));
+
+    for(const m of candidates){
+      const key=m.type+":"+m.id;
+      const old=unique.get(key);
+
+      if(!old){
+        unique.set(key,m);
+        continue;
+      }
+
+      if(
+        m.type==="splice" &&
+        m.path.startsWith("拼接素材/") &&
+        !old.path.startsWith("拼接素材/")
+      ){
+        unique.set(key,m);
+      }
+    }
+
     const list=[...unique.values()];
 
     libraryManifest={
@@ -399,57 +439,240 @@ async function loadLibraryManifest(){
       effect:list.filter(x=>x.type==="effect")
     };
 
-    Object.values(libraryManifest).forEach(arr=>arr.sort(naturalMaterialSort));
+    Object.values(libraryManifest)
+      .forEach(arr=>arr.sort(naturalMaterialSort));
+
     return libraryManifest;
   })();
 
-  try{return await libraryManifestPromise}
-  finally{libraryManifestPromise=null}
+  try{
+    return await libraryManifestPromise;
+  }finally{
+    libraryManifestPromise=null;
+  }
 }
 
+
+/* =========================================================
+   依照素材庫「實際檔名規則」分類
+   ========================================================= */
 function materialFromPath(path){
   const clean=String(path).replace(/^\/+/,"");
-  if(!AUDIO_EXT.test(clean)) return null;
 
-  const decoded=safeDecode(clean);
-  const lower=decoded.toLowerCase();
-  const filename=decoded.split("/").pop()||decoded;
-  const base=filename.replace(/\.[^.]+$/,"");
-  let type="music";
-
-  if(lower.includes("拼接素材") || lower.includes("/splice") || base.includes("拼接")){
-    type="splice";
-  }else if(lower.includes("音效") || /(^|\/|_)effect\d*/i.test(lower) || /effect/i.test(base)){
-    type="effect";
-  }else if(lower.includes("音樂") || /(^|\/|_)music\d*/i.test(lower) || /music/i.test(base)){
-    type="music";
-  }else{
-    /* 素材庫裡其他沒有分類字樣的音訊，預設視為音樂，避免漏掉新音樂 */
-    type="music";
+  if(!AUDIO_EXT.test(clean)){
+    return null;
   }
 
-  const number=extractNumber(base);
-  let id;
-  if(type==="music" && /^music\s*\d+/i.test(base)) id=base.replace(/\s+/g,"").toLowerCase();
-  else if(type==="effect" && /^effect\s*\d+/i.test(base)) id=base.replace(/\s+/g,"").toLowerCase();
-  else if(type==="splice" && number!=null) id=`splice${String(number).padStart(2,"0")}`;
-  else id=`${type}_${slugify(base)}`;
+  const decoded=safeDecode(clean);
+  const parts=decoded.split("/");
+  const filename=parts.pop()||decoded;
+  const folder=parts.join("/");
+  const base=filename.replace(/\.[^.]+$/,"");
+  const isRoot=!folder;
 
-  let title=base;
-  if(type==="music" && number!=null && /^music/i.test(base)) title=`音樂 ${String(number).padStart(2,"0")}`;
-  if(type==="effect" && number!=null && /^effect/i.test(base)) title=`音效 ${String(number).padStart(2,"0")}`;
-  if(type==="splice" && number!=null) title=`拼接 ${String(number).padStart(2,"0")}`;
+  let type=null;
+  let number=null;
+  let id=null;
+  let title=base.replaceAll("_"," ");
+
+  /* ---------- 拼接 ---------- */
+  if(
+    folder.split("/").includes("拼接素材") ||
+    /^\d+_拼接素材$/i.test(base)
+  ){
+    number=extractNumber(base);
+
+    if(number==null){
+      return null;
+    }
+
+    type="splice";
+    id=`splice${String(number).padStart(2,"0")}`;
+    title=`拼接${String(number).padStart(2,"0")}`;
+  }
+
+  /* ---------- 音樂 ---------- */
+  else if(/^music\d+$/i.test(base)){
+    number=extractNumber(base);
+    type="music";
+    id=`music${String(number).padStart(2,"0")}`;
+    title=String(number).padStart(2,"0");
+  }
+
+  else if(/自由品勢音樂\s*\d+/i.test(base)){
+    number=extractNumber(base);
+
+    if(number==null){
+      return null;
+    }
+
+    type="music";
+    id=`music${String(number).padStart(2,"0")}`;
+    title=String(number).padStart(2,"0");
+  }
+
+  /* ---------- 音效 ---------- */
+  else if(
+    isRoot &&
+    /^\d+_.+/.test(base) &&
+    !base.includes("拼接素材")
+  ){
+    number=extractNumber(base);
+
+    if(number==null){
+      return null;
+    }
+
+    type="effect";
+    id=`effect${String(number).padStart(2,"0")}`;
+    title=base.replaceAll("_"," ");
+  }
+
+  /*
+    其他無法確定分類的音訊直接略過。
+    這是這次修正的重點：絕對不再預設丟進「音樂」。
+  */
+  else{
+    return null;
+  }
 
   return{
-    id,type,title,path:clean,base,number,
+    id,
+    type,
+    title,
+    path:clean,
+    base,
+    number,
     url:new URL(clean,LIBRARY_BASE).href
   };
 }
 
-function safeDecode(s){try{return decodeURIComponent(s)}catch{return s}}
-function slugify(s){return String(s).trim().toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\u4e00-\u9fff_-]+/g,"").slice(0,80)||uid("item")}
-function extractNumber(s){const m=String(s).match(/\d+/);return m?Number(m[0]):null}
-function naturalMaterialSort(a,b){return a.title.localeCompare(b.title,"zh-Hant",{numeric:true,sensitivity:"base"})}
+
+/* =========================================================
+   GitHub API 暫時失敗時，從素材庫首頁資料建立清單
+   ========================================================= */
+function parseLibraryPage(html){
+  const result={
+    music:[],
+    splice:[],
+    effect:[]
+  };
+
+  /*
+    素材庫目前每個音樂 / 音效物件都有：
+    id / title / file / info / type
+  */
+  const objectRe=
+    /\{[^{}]*?id\s*:\s*"([^"]+)"[^{}]*?title\s*:\s*"([^"]+)"[^{}]*?file\s*:\s*"([^"]+)"[^{}]*?info\s*:\s*"([^"]*)"[^{}]*?type\s*:\s*"(music|effect|splice)"[^{}]*?\}/g;
+
+  let m;
+
+  while((m=objectRe.exec(html))){
+    const id=m[1];
+    const title=m[2];
+    const file=m[3];
+    const type=m[5];
+
+    if(!AUDIO_EXT.test(file)){
+      continue;
+    }
+
+    const number=extractNumber(id);
+
+    result[type].push({
+      id,
+      type,
+      title,
+      path:file,
+      base:file.replace(/\.[^.]+$/,"").split("/").pop(),
+      number,
+      url:new URL(file,LIBRARY_BASE).href
+    });
+  }
+
+  /*
+    素材庫的拼接目前是用 Array.from({ length: 62 }) 自動建立。
+    這裡直接讀取 length，所以未來素材庫改成 70、80，不必修改剪輯器。
+  */
+  const spliceMatch=html.match(
+    /const\s+spliceMaterials\s*=\s*Array\.from\s*\(\s*\{\s*length\s*:\s*(\d+)\s*\}/
+  );
+
+  if(spliceMatch){
+    const count=Number(spliceMatch[1]);
+
+    for(let i=1;i<=count;i++){
+      const pad=String(i).padStart(2,"0");
+
+      result.splice.push({
+        id:`splice${pad}`,
+        type:"splice",
+        title:`拼接${pad}`,
+        path:`拼接素材/${pad}_拼接素材.mp3`,
+        base:`${pad}_拼接素材`,
+        number:i,
+        url:new URL(`拼接素材/${pad}_拼接素材.mp3`,LIBRARY_BASE).href
+      });
+    }
+  }
+
+  /* id 去重 */
+  for(const type of ["music","splice","effect"]){
+    const map=new Map();
+
+    for(const item of result[type]){
+      if(!map.has(item.id)){
+        map.set(item.id,item);
+      }
+    }
+
+    result[type]=[...map.values()];
+  }
+
+  return result;
+}
+
+
+function safeDecode(s){
+  try{
+    return decodeURIComponent(s);
+  }catch{
+    return s;
+  }
+}
+
+function slugify(s){
+  return String(s)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g,"-")
+    .replace(/[^a-z0-9\u4e00-\u9fff_-]+/g,"")
+    .slice(0,80)
+    || uid("item");
+}
+
+function extractNumber(s){
+  const m=String(s).match(/\d+/);
+  return m?Number(m[0]):null;
+}
+
+function naturalMaterialSort(a,b){
+  const an=a.number;
+  const bn=b.number;
+
+  if(an!=null && bn!=null && an!==bn){
+    return an-bn;
+  }
+
+  return a.title.localeCompare(
+    b.title,
+    "zh-Hant",
+    {
+      numeric:true,
+      sensitivity:"base"
+    }
+  );
+}
 
 /* =========================================================
    標記同步：使用同一個 origin 的 localStorage
