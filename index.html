@@ -147,6 +147,11 @@ button:disabled{cursor:default}
 
 /* ===== Toast ===== */
 .toast{position:fixed;left:50%;bottom:calc(82px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9999;display:none;max-width:88vw;padding:10px 15px;border-radius:22px;background:rgba(0,0,0,.94);color:#fff;font-size:12px;text-align:center}
+.embedded-warning{display:none;margin:8px;padding:10px 11px;border:1px solid #775d18;border-radius:10px;background:#2d2614;color:#fff3bd;font-size:12px;line-height:1.55}
+.embedded-warning.show{display:block}
+.embedded-warning-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.external-btn{border:0;border-radius:8px;padding:9px 11px;background:#fff;color:#111;font-weight:900}
+.copy-url-btn{border:1px solid #666;border-radius:8px;padding:9px 11px;background:#30343c;color:#fff;font-weight:900}
 
 @media(min-width:700px){
   body{max-width:520px;margin:0 auto;border-left:1px solid #232832;border-right:1px solid #232832}
@@ -168,6 +173,14 @@ button:disabled{cursor:default}
 </header>
 
 <input id="uploadInput" type="file" accept="audio/*" multiple hidden>
+
+<div id="embeddedWarning" class="embedded-warning">
+  ⚠️ 目前是 LINE／App 內建瀏覽器。這類瀏覽器會封鎖網頁產生的音檔下載，所以剪完後可能無法把 WAV 存進手機。建議先改用 Chrome／手機瀏覽器開啟再剪輯。
+  <div class="embedded-warning-actions">
+    <button id="openExternalBtn" class="external-btn">🌐 用 Chrome／瀏覽器開啟</button>
+    <button id="copyEditorUrlBtn" class="copy-url-btn">🔗 複製網址</button>
+  </div>
+</div>
 
 <section class="editor-head">
   <div class="title">🎧 自由品勢音樂剪輯</div>
@@ -1623,10 +1636,17 @@ function makeAudioFile(blob,name){
   return new File([blob],cleanFileName(name),{type:"audio/wav",lastModified:Date.now()});
 }
 
-function isEmbeddedMobileBrowser(){
+function getEmbeddedBrowserName(){
   const ua=navigator.userAgent||"";
-  return /;\s*wv\)|\bwv\b|FBAN|FBAV|Instagram|Line\/|MicroMessenger|GSA\//i.test(ua);
+  if(/Line\//i.test(ua) || /\bLINE\b/i.test(ua))return "LINE";
+  if(/FBAN|FBAV/i.test(ua))return "Facebook";
+  if(/Instagram/i.test(ua))return "Instagram";
+  if(/MicroMessenger/i.test(ua))return "WeChat";
+  if(/;\s*wv\)|\bwv\b/i.test(ua))return "App 內建瀏覽器";
+  return "";
 }
+
+function isEmbeddedMobileBrowser(){return !!getEmbeddedBrowserName()}
 
 function canShareFile(file){
   try{
@@ -1635,26 +1655,85 @@ function canShareFile(file){
   }catch{return false}
 }
 
+function normalEditorUrl(){
+  return location.href.split("#")[0];
+}
+
+function chromeIntentUrl(){
+  const u=new URL(normalEditorUrl());
+  const path=(u.host+u.pathname+u.search).replace(/^\/+/,"");
+  const fallback=encodeURIComponent(normalEditorUrl());
+  return `intent://${path}#Intent;scheme=${u.protocol.replace(":","")};package=com.android.chrome;S.browser_fallback_url=${fallback};end`;
+}
+
+function showEmbeddedBrowserHelp(action="下載／分享"){
+  const browser=getEmbeddedBrowserName()||"目前的 App 內建瀏覽器";
+  openModal("⚠️ 請改用手機瀏覽器",`
+    <div class="panel-note" style="font-size:13px;color:#fff;line-height:1.75">
+      你目前是在 <b>${escapeHtml(browser)}</b> 裡開啟剪輯器。這個環境會攔住網頁產生的 WAV 音檔，所以「${escapeHtml(action)}」無法可靠完成。<br><br>
+      請用 <b>Chrome／手機瀏覽器</b> 開啟剪輯器；在正常瀏覽器中，「⬇️ 儲存」會下載到手機的下載檔案，「📤 分享」會叫出 Android 分享選單。
+    </div>
+    <div class="list-actions">
+      <button id="modalOpenExternal" class="primary-btn">🌐 用 Chrome 開啟</button>
+      <button id="modalCopyUrl" class="row-btn">🔗 複製網址</button>
+    </div>
+    <div class="panel-note" style="margin-top:10px">注意：Android 網頁不能在未經系統授權下強制寫入「Music／音樂」資料夾；正常瀏覽器會先下載到 Downloads，你可以再由檔案管理移到音樂資料夾。</div>
+  `);
+  document.getElementById("modalOpenExternal")?.addEventListener("click",openInExternalBrowser);
+  document.getElementById("modalCopyUrl")?.addEventListener("click",copyEditorUrl);
+}
+
+function openInExternalBrowser(){
+  const url=normalEditorUrl();
+  // Android：優先用 intent 明確叫 Chrome。若裝置沒有 Chrome，fallback 會回到一般 https。
+  if(/Android/i.test(navigator.userAgent||"")){
+    location.href=chromeIntentUrl();
+    return;
+  }
+  window.open(url,"_blank","noopener");
+}
+
+async function copyEditorUrl(){
+  const url=normalEditorUrl();
+  try{
+    await navigator.clipboard.writeText(url);
+    showToast("🔗 網址已複製，請貼到 Chrome 開啟");
+  }catch{
+    prompt("請複製這個網址，再貼到 Chrome 開啟",url);
+  }
+}
+
 async function shareBlobFile(blob,name){
+  // LINE/社群 App 的 WebView 對 File Share/Blob 常直接封鎖；不要再假裝成功或回退成無效下載。
+  if(isEmbeddedMobileBrowser()){
+    showEmbeddedBrowserHelp("分享音檔");
+    return false;
+  }
+
   const file=makeAudioFile(blob,name);
   if(canShareFile(file)){
     try{
-      await navigator.share({title:file.name,text:"自由品勢音樂成品",files:[file]});
-      showToast("📤 已開啟手機分享");
+      await navigator.share({title:file.name,files:[file]});
       return true;
     }catch(e){
       if(e?.name==="AbortError")return false;
       console.warn("分享失敗",e);
     }
   }
-  showToast("⚠️ 這個瀏覽器不支援直接分享，改用儲存");
+
+  showToast("⚠️ 這個瀏覽器不支援直接分享檔案，先幫你下載");
   return directDownloadBlob(blob,file.name);
 }
 
 async function saveBlobToPhone(blob,name){
   const fileName=cleanFileName(name);
 
-  // 支援 File System Access API 的瀏覽器：直接叫出系統儲存位置選擇器
+  if(isEmbeddedMobileBrowser()){
+    showEmbeddedBrowserHelp("下載音檔");
+    return false;
+  }
+
+  // 若瀏覽器提供原生另存新檔，優先使用。
   if(window.showSaveFilePicker){
     try{
       const handle=await window.showSaveFilePicker({
@@ -1664,24 +1743,11 @@ async function saveBlobToPhone(blob,name){
       const writable=await handle.createWritable();
       await writable.write(blob);
       await writable.close();
-      showToast("✅ 已儲存到手機");
+      showToast("✅ 已儲存音檔");
       return true;
     }catch(e){
       if(e?.name==="AbortError")return false;
-      console.warn("系統儲存失敗",e);
-    }
-  }
-
-  // Android App 內建瀏覽器常會封鎖 blob 下載；直接改用系統分享/儲存面板
-  const file=makeAudioFile(blob,fileName);
-  if(isEmbeddedMobileBrowser() && canShareFile(file)){
-    try{
-      await navigator.share({title:file.name,text:"請選擇『檔案／儲存到裝置』來保存音檔",files:[file]});
-      showToast("✅ 已開啟手機儲存／分享介面");
-      return true;
-    }catch(e){
-      if(e?.name==="AbortError")return false;
-      console.warn("內建瀏覽器分享儲存失敗",e);
+      console.warn("系統另存失敗，改用一般下載",e);
     }
   }
 
@@ -1689,6 +1755,10 @@ async function saveBlobToPhone(blob,name){
 }
 
 function directDownloadBlob(blob,name){
+  if(isEmbeddedMobileBrowser()){
+    showEmbeddedBrowserHelp("下載音檔");
+    return false;
+  }
   try{
     const url=URL.createObjectURL(blob);
     const a=document.createElement("a");
@@ -1699,20 +1769,29 @@ function directDownloadBlob(blob,name){
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),10000);
-    showToast("⬇️ 已送出下載；請到手機『下載』或『檔案』查看");
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    showToast("⬇️ 已開始下載，請到手機『下載／Downloads』查看");
     return true;
   }catch(e){
     console.error(e);
-    showToast("⚠️ 目前瀏覽器無法儲存，請改按『📤 分享』");
+    showToast("⚠️ 下載失敗，請改用 Chrome 再試一次");
     return false;
   }
+}
+
+function initEmbeddedBrowserGuard(){
+  if(!isEmbeddedMobileBrowser())return;
+  const box=document.getElementById("embeddedWarning");
+  if(box)box.classList.add("show");
+  document.getElementById("openExternalBtn")?.addEventListener("click",openInExternalBrowser);
+  document.getElementById("copyEditorUrlBtn")?.addEventListener("click",copyEditorUrl);
 }
 
 /* =========================================================
    啟動
    ========================================================= */
 renderAll();
+initEmbeddedBrowserGuard();
 loadLibraryManifest().catch(()=>{}); // 預先讀素材庫，按分類時更快
 </script>
 </body>
