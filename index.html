@@ -79,16 +79,19 @@ button:disabled{cursor:default}
 .fixed-playhead{position:absolute;left:0;top:var(--ruler-h);bottom:0;width:3px;background:#fff;z-index:50;pointer-events:none;box-shadow:0 0 5px #000}
 .fixed-playhead::before{content:"";position:absolute;top:-5px;left:-5px;width:13px;height:13px;border-radius:3px 3px 8px 8px;background:#fff}
 .empty-timeline{position:absolute;left:14px;right:14px;top:104px;text-align:center;color:#747c8b;font-size:13px;line-height:1.75;z-index:2}
+.track-controls{position:absolute;left:4px;top:var(--ruler-h);z-index:70;pointer-events:none;will-change:transform}
+.track-mute-btn{position:absolute;left:0;width:29px;height:29px;border:1px solid rgba(255,255,255,.28);border-radius:50%;background:rgba(12,15,20,.82);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;padding:0;pointer-events:auto;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.track-mute-btn.muted{background:rgba(120,18,30,.9);border-color:#ff647b}
 
 /* ===== 片段 ===== */
-.clip{position:absolute;height:58px;min-width:32px;border:2px solid transparent;border-radius:7px;overflow:hidden;user-select:none;touch-action:none;cursor:grab}
+.clip{position:absolute;height:58px;min-width:0;border:0;border-radius:0;overflow:hidden;user-select:none;touch-action:none;cursor:grab}
 .clip.music{background:var(--music)}
 .clip.splice{background:var(--splice)}
 .clip.effect{background:var(--effect)}
-.clip.selected{border-color:#fff;box-shadow:0 0 0 2px var(--pink)}
+.clip.selected{box-shadow:inset 0 0 0 2px #fff,0 0 0 2px var(--pink)}
 .clip.dragging{opacity:.88;z-index:35;cursor:grabbing}
 .clip-title{position:absolute;left:8px;right:8px;top:3px;z-index:5;font-size:10px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px #000}
-.wave-canvas{position:absolute;left:1px;right:1px;top:18px;width:calc(100% - 2px);height:35px;pointer-events:none}
+.wave-canvas{position:absolute;left:0;right:0;top:18px;width:100%;height:35px;pointer-events:none}
 .trim-handle{display:none;position:absolute;top:0;bottom:0;width:12px;background:#fff;z-index:12;cursor:ew-resize;touch-action:none}
 .clip.selected .trim-handle{display:block}
 .trim-handle.left{left:0;border-radius:5px 0 0 5px}
@@ -195,6 +198,7 @@ button:disabled{cursor:default}
       </div>
     </div>
   </div>
+  <div id="trackControls" class="track-controls"></div>
   <div class="fixed-playhead"></div>
 </section>
 
@@ -213,7 +217,6 @@ button:disabled{cursor:default}
   <button id="deleteBtn" class="tool-btn need-clip" disabled><span class="ico">🗑️</span><span class="txt">刪除</span></button>
   <button id="copyBtn" class="tool-btn need-clip" disabled><span class="ico">⧉</span><span class="txt">複製</span></button>
   <button id="speedBtn" class="tool-btn need-clip" disabled><span class="ico">⏱️</span><span class="txt">變速</span></button>
-  <button id="muteBtn" class="tool-btn need-clip" disabled><span class="ico">🔇</span><span class="txt">靜音</span></button>
   <button id="beatBtn" class="tool-btn"><span class="ico">🚩</span><span class="txt">節拍</span></button>
 </section>
 
@@ -261,6 +264,7 @@ let playStartCtx = 0;
 let playStartTimeline = 0;
 let libraryManifest = null;
 let libraryManifestPromise = null;
+let mutedTracks = new Set(); // 只用於試聽，不改變片段音量，也不影響輸出成品
 
 /* =========================================================
    DOM
@@ -272,6 +276,7 @@ const ruler = document.getElementById("ruler");
 const tracksBg = document.getElementById("tracksBg");
 const beatsLayer = document.getElementById("beatsLayer");
 const clipsLayer = document.getElementById("clipsLayer");
+const trackControls = document.getElementById("trackControls");
 const emptyTimeline = document.getElementById("emptyTimeline");
 const timeReadout = document.getElementById("timeReadout");
 const uploadInput = document.getElementById("uploadInput");
@@ -302,7 +307,6 @@ document.getElementById("splitBtn").addEventListener("click",splitSelected);
 document.getElementById("deleteBtn").addEventListener("click",deleteSelected);
 document.getElementById("copyBtn").addEventListener("click",copySelected);
 document.getElementById("speedBtn").addEventListener("click",editSpeed);
-document.getElementById("muteBtn").addEventListener("click",toggleMute);
 document.getElementById("beatBtn").addEventListener("click",addBeat);
 
 /* =========================================================
@@ -763,6 +767,7 @@ function bindMaterialPanel(type){
       if(!m) return;
       const old=btn.textContent;
       btn.disabled=true;btn.textContent="加入中…";
+      stopModalAudio();
       try{
         await addLibraryMaterial(m);
         btn.textContent="✅ 已加入";
@@ -881,7 +886,7 @@ function renderAll(){
   // 白線從最左邊開始，所以左邊不留空；右邊保留一個可滑區，讓最後尾端也能對到白線
   timelineContent.style.width=(pad+duration*PPS+tailPad)+"px";
   timelineContent.style.height=(RULER_H+Math.max(260,tracks*TRACK_H+60))+"px";
-  renderRuler(rulerDuration,pad);renderTracks(tracks);renderBeats(pad);renderClips(pad);
+  renderRuler(rulerDuration,pad);renderTracks(tracks);renderBeats(pad);renderClips(pad);renderTrackControls(tracks);
   emptyTimeline.style.display=clips.length?"none":"block";
   updateToolState();updateTimeReadout();
 
@@ -921,6 +926,33 @@ function renderBeats(pad){
   beats.forEach(t=>{const b=document.createElement("div");b.className="beat-line";b.style.left=(pad+t*PPS)+"px";beatsLayer.appendChild(b)});
 }
 
+function renderTrackControls(count){
+  trackControls.innerHTML="";
+  for(let i=0;i<count;i++){
+    const b=document.createElement("button");
+    const muted=mutedTracks.has(i);
+    b.className="track-mute-btn"+(muted?" muted":"");
+    b.style.top=(i*TRACK_H+20)+"px";
+    b.textContent=muted?"🔇":"🔊";
+    b.title=muted?"恢復這條音軌試聽":"暫時靜音這條音軌（只影響試聽）";
+    b.addEventListener("click",e=>{e.stopPropagation();toggleTrackPreviewMute(i)});
+    trackControls.appendChild(b);
+  }
+  syncTrackControls();
+}
+
+function syncTrackControls(){
+  trackControls.style.transform=`translateY(${-timelineScroll.scrollTop}px)`;
+}
+
+function toggleTrackPreviewMute(track){
+  if(mutedTracks.has(track))mutedTracks.delete(track);else mutedTracks.add(track);
+  const wasPlaying=isPlaying;
+  if(wasPlaying){stopPlayback();startPlayback();}
+  renderTrackControls(trackCount());
+  showToast(mutedTracks.has(track)?"🔇 這條音軌已暫停試聽":"🔊 這條音軌已恢復試聽");
+}
+
 function renderClips(pad){
   clipsLayer.innerHTML="";
   clips.forEach(c=>{
@@ -930,7 +962,7 @@ function renderClips(pad){
     el.dataset.id=c.id;
     el.style.left=(pad+c.start*PPS)+"px";
     el.style.top=(RULER_H+c.track*TRACK_H+6)+"px";
-    el.style.width=Math.max(32,clipDuration(c)*PPS)+"px";
+    el.style.width=Math.max(1,clipDuration(c)*PPS)+"px";
     el.innerHTML=`
       <div class="clip-title">${escapeHtml(c.name)}</div>
       <canvas class="wave-canvas"></canvas>
@@ -947,32 +979,30 @@ function drawWave(canvas,c,a){
   const w=Math.max(1,Math.floor(canvas.clientWidth)),h=Math.max(1,Math.floor(canvas.clientHeight)),dpr=window.devicePixelRatio||1;
   canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);
   const ctx=canvas.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
-  const start=Math.floor((c.trimStart/a.duration)*a.peaks.length);
-  const end=Math.max(start+1,Math.floor((c.trimEnd/a.duration)*a.peaks.length));
 
-  // 視覺上把真正有聲音的區段撐滿整個片段，避免前後看起來像留空沒接上
-  let visStart=start, visEnd=end-1;
-  const threshold=0.012;
-  while(visStart<end-1 && (a.peaks[visStart]||0)<threshold) visStart++;
-  while(visEnd>visStart && (a.peaks[visEnd]||0)<threshold) visEnd--;
-  if(visEnd-visStart<2){visStart=start;visEnd=end-1;}
-
+  // 嚴格使用片段真正的 trimStart / trimEnd，不切掉低音量區，也不把波形硬拉滿。
+  const peakCount=a.peaks.length;
+  const start=Math.max(0,Math.min(peakCount-1,Math.floor((c.trimStart/a.duration)*peakCount)));
+  const endExclusive=Math.max(start+1,Math.min(peakCount,Math.ceil((c.trimEnd/a.duration)*peakCount)));
+  const span=Math.max(1,endExclusive-start);
   const mid=h/2;
-  ctx.beginPath();
-  ctx.moveTo(0,mid);
-  ctx.lineTo(w,mid);
-  ctx.lineWidth=1;
-  ctx.strokeStyle="rgba(255,255,255,.25)";
-  ctx.stroke();
+
+  // 即使音訊開頭或尾端本來就是靜音，也畫出真實的 0 音量中線到兩端，不留下視覺空白。
+  ctx.beginPath();ctx.moveTo(0,mid);ctx.lineTo(w,mid);
+  ctx.lineWidth=1;ctx.strokeStyle="rgba(255,255,255,.28)";ctx.stroke();
+
   ctx.beginPath();
   for(let x=0;x<w;x++){
-    const idx=Math.min(a.peaks.length-1,visStart+Math.floor((x/Math.max(1,w-1))*Math.max(1,visEnd-visStart)));
+    const ratio=w<=1?0:x/(w-1);
+    const idx=Math.min(endExclusive-1,start+Math.floor(ratio*(span-1)));
     const y=(a.peaks[idx]||0)*mid*.95;
-    if(x===0)ctx.moveTo(x,mid-y);else ctx.lineTo(x,mid-y);
+    if(x===0)ctx.moveTo(0,mid-y);else ctx.lineTo(x,mid-y);
   }
   for(let x=w-1;x>=0;x--){
-    const idx=Math.min(a.peaks.length-1,visStart+Math.floor((x/Math.max(1,w-1))*Math.max(1,visEnd-visStart)));
-    const y=(a.peaks[idx]||0)*mid*.95;ctx.lineTo(x,mid+y);
+    const ratio=w<=1?0:x/(w-1);
+    const idx=Math.min(endExclusive-1,start+Math.floor(ratio*(span-1)));
+    const y=(a.peaks[idx]||0)*mid*.95;
+    ctx.lineTo(x,mid+y);
   }
   ctx.closePath();ctx.fillStyle="rgba(255,255,255,.94)";ctx.fill();
 }
@@ -1012,7 +1042,7 @@ function startClipDrag(e,el,c){
     window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);
     if(moved){
       snapClipToNeighbors(c);
-      pushCollisions(c);
+      constrainMovedClip(c,oldStart);
       normalizeTracks();
       pushUndoSnapshot(before);
       selectedClipId=null; // 放手後白邊自動消失
@@ -1033,20 +1063,31 @@ function startTrim(e,el,c,side){
     changed=true;
     const deltaTimeline=(ev.clientX-sx)/PPS,deltaSource=deltaTimeline*c.speed;
     if(side==="right"){
-      c.trimEnd=Math.min(a.duration,Math.max(oldTrimStart+MIN_CLIP*c.speed,oldTrimEnd+deltaSource));
+      let newTrimEnd=Math.min(a.duration,Math.max(oldTrimStart+MIN_CLIP*c.speed,oldTrimEnd+deltaSource));
+      const nextStart=nearestNextStart(c,oldStart+((oldTrimEnd-oldTrimStart)/c.speed));
+      if(Number.isFinite(nextStart)){
+        const maxTimelineDuration=Math.max(MIN_CLIP,nextStart-oldStart);
+        newTrimEnd=Math.min(newTrimEnd,oldTrimStart+maxTimelineDuration*c.speed);
+      }
+      c.trimEnd=newTrimEnd;
     }else{
       const earliestTrim=Math.max(0,oldTrimStart-oldStart*c.speed);
-      const newTrim=Math.min(oldTrimEnd-MIN_CLIP*c.speed,Math.max(earliestTrim,oldTrimStart+deltaSource));
-      const shift=(newTrim-oldTrimStart)/c.speed;
-      c.trimStart=newTrim;c.start=oldStart+shift;
+      let newTrim=Math.min(oldTrimEnd-MIN_CLIP*c.speed,Math.max(earliestTrim,oldTrimStart+deltaSource));
+      let newStart=oldStart+(newTrim-oldTrimStart)/c.speed;
+      const prevEnd=nearestPreviousEnd(c,oldStart);
+      if(Number.isFinite(prevEnd) && newStart<prevEnd){
+        newStart=prevEnd;
+        newTrim=oldTrimStart+(newStart-oldStart)*c.speed;
+      }
+      c.trimStart=newTrim;c.start=newStart;
     }
-    const pad=leftPad();el.style.left=(pad+c.start*PPS)+"px";el.style.width=Math.max(32,clipDuration(c)*PPS)+"px";
+    const pad=leftPad();el.style.left=(pad+c.start*PPS)+"px";el.style.width=Math.max(1,clipDuration(c)*PPS)+"px";
     drawWave(el.querySelector("canvas"),c,a);
   }
 
   function up(){
     window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);
-    if(changed){pushCollisions(c);normalizeTracks();pushUndoSnapshot(before)}
+    if(changed){normalizeTracks();pushUndoSnapshot(before)}
     selectedClipId=null; // 左右微調完成，放手就把白邊收起來
     renderAll();
   }
@@ -1083,28 +1124,59 @@ function snapClipToNeighbors(c){
   if(best.dist<=tolerance)c.start=Math.max(0,best.start);
 }
 
-function pushCollisions(moved){
-  const queue=[moved];let guard=0;
-  while(queue.length && guard++<300){
-    const cur=queue.shift(),end=clipEnd(cur);
-    clips.forEach(other=>{
-      if(other.id!==cur.id && other.track===cur.track && overlaps(cur,other)){
-        other.start=end; // 直接貼齊，不再多留 0.02 秒靜音縫隙
-        queue.push(other);
-      }
-    });
-  }
+function nearestPreviousEnd(c,referenceStart=c.start){
+  let v=-Infinity;
+  clips.forEach(other=>{
+    if(other.id===c.id || other.track!==c.track)return;
+    const e=clipEnd(other);
+    if(e<=referenceStart+.001 && e>v)v=e;
+  });
+  return v;
 }
+
+function nearestNextStart(c,referenceEnd=clipEnd(c)){
+  let v=Infinity;
+  clips.forEach(other=>{
+    if(other.id===c.id || other.track!==c.track)return;
+    if(other.start>=referenceEnd-.001 && other.start<v)v=other.start;
+  });
+  return v;
+}
+
+// 如果拖曳後與既有片段重疊，只限制「正在拖的這一段」，絕不偷偷搬動其他已排好的片段。
+function constrainMovedClip(c,oldStart=c.start){
+  let guard=0;
+  while(guard++<50){
+    const hit=clips.find(other=>other.id!==c.id && other.track===c.track && overlaps(c,other));
+    if(!hit)break;
+    const d=clipDuration(c);
+    const movingRight=c.start>=oldStart;
+    if(movingRight){
+      const before=hit.start-d;
+      if(before>=0)c.start=before;
+      else c.start=clipEnd(hit);
+    }else{
+      c.start=clipEnd(hit);
+    }
+  }
+  c.start=Math.max(0,c.start);
+}
+
 function normalizeTracks(){
-  if(!clips.length)return;
+  if(!clips.length){mutedTracks.clear();return;}
   const used=[...new Set(clips.map(c=>c.track))].sort((a,b)=>a-b);
-  const map=new Map(used.map((v,i)=>[v,i]));clips.forEach(c=>c.track=map.get(c.track));
+  const map=new Map(used.map((v,i)=>[v,i]));
+  const nextMuted=new Set();
+  mutedTracks.forEach(oldTrack=>{if(map.has(oldTrack))nextMuted.add(map.get(oldTrack));});
+  clips.forEach(c=>c.track=map.get(c.track));
+  mutedTracks=nextMuted;
 }
 
 /* =========================================================
    時間軸移動：白線固定，左右滑時間軸
    ========================================================= */
 timelineScroll.addEventListener("scroll",()=>{
+  syncTrackControls();
   if(!isPlaying){
     const max=projectDuration()*PPS;
     if(timelineScroll.scrollLeft<0)timelineScroll.scrollLeft=0;
@@ -1199,7 +1271,7 @@ function deleteSelected(){
 
 function copySelected(){
   const c=getSelected();if(!c)return;
-  const before=snapshot();const n={...c,id:uid("clip"),start:clipEnd(c)+.05};clips.push(n);pushCollisions(n);selectedClipId=n.id;pushUndoSnapshot(before);renderAll();showToast("⧉ 已複製");
+  const before=snapshot();const n={...c,id:uid("clip"),start:clipEnd(c)};clips.push(n);selectedClipId=n.id;pushUndoSnapshot(before);renderAll();showToast("⧉ 已複製並無縫接在尾端");
 }
 
 function toggleMute(){
@@ -1244,7 +1316,7 @@ function editSpeed(){
     <div class="form-group"><label>播放速度</label><select id="speedSelect">${speeds.map(v=>`<option value="${v}" ${c.speed===v?"selected":""}>${v}x</option>`).join("")}</select></div>
     <button id="saveSpeed" class="primary-btn">確定</button>`);
   document.getElementById("saveSpeed").addEventListener("click",()=>{
-    const before=snapshot();c.speed=Number(document.getElementById("speedSelect").value);pushCollisions(c);pushUndoSnapshot(before);closeModal();renderAll();showToast("⏱️ 速度已調整");
+    const before=snapshot();c.speed=Number(document.getElementById("speedSelect").value);pushUndoSnapshot(before);closeModal();renderAll();showToast("⏱️ 速度已調整");
   });
 }
 
@@ -1274,11 +1346,12 @@ async function togglePlay(){
 }
 
 function startPlayback(){
+  stopModalAudio();
   stopPlayback();isPlaying=true;document.getElementById("playBtn").textContent="■";
   playStartTimeline=getPlayheadTime();playStartCtx=audioContext.currentTime;activeSources=[];
 
   clips.forEach(c=>{
-    if(c.muted)return;
+    if(c.muted || mutedTracks.has(c.track))return;
     const a=assets.get(c.assetId);if(!a || clipEnd(c)<=playStartTimeline)return;
     const timelineStart=Math.max(playStartTimeline,c.start);
     const delay=timelineStart-playStartTimeline;
@@ -1329,9 +1402,28 @@ async function finishProject(){
     const now=new Date(),productId=uid("product"),draftId=uid("draft"),assetRecords=await collectProjectAssets();
     await dbPut("products",{id:productId,name,createdAt:now.toISOString(),duration:projectDuration(),blob:wavBlob});
     await dbPut("drafts",{id:draftId,name,createdAt:now.toISOString(),duration:projectDuration(),clips:clips.map(c=>({...c})),beats:[...beats],assets:assetRecords,finalBlob:wavBlob,productId});
-    downloadBlob(wavBlob,name+".wav");
-    showToast("✅ 已下載，並新增成品與草稿");
+    showFinishedProduct(productId);
   }catch(e){console.error(e);showToast("⚠️ 完成失敗，請再試一次")}
+}
+
+async function showFinishedProduct(productId){
+  const p=await dbGet("products",productId);if(!p)return;
+  const url=URL.createObjectURL(p.blob);
+  openModal("✅ 成品已完成",`
+    <div class="panel-note">成品已保存在「🎵 成品」裡。你現在可以直接試聽、儲存到手機，或把 WAV 音檔直接分享出去。</div>
+    <div class="list-row">
+      <div class="list-name">${escapeHtml(p.name)}</div>
+      <div class="list-meta">${formatPrecise(p.duration)} ｜ WAV</div>
+      <audio controls src="${url}"></audio>
+      <div class="list-actions">
+        <button id="finishedSaveBtn" class="primary-btn">⬇️ 儲存到手機</button>
+        <button id="finishedShareBtn" class="primary-btn">📤 分享音檔</button>
+      </div>
+    </div>
+    <div class="panel-note">若目前是 App 內建瀏覽器，Android 可能不允許網頁直接寫入「音樂」資料夾；這時按「儲存到手機」會自動改用手機的儲存／分享介面，讓你選擇「檔案」或音樂資料夾。</div>
+  `);
+  document.getElementById("finishedSaveBtn").addEventListener("click",()=>saveBlobToPhone(p.blob,p.name+".wav"));
+  document.getElementById("finishedShareBtn").addEventListener("click",()=>shareBlobFile(p.blob,p.name+".wav"));
 }
 
 async function renderMixToWav(){
@@ -1383,7 +1475,7 @@ async function showDrafts(){
         <div class="list-meta">${new Date(d.createdAt).toLocaleString()} ｜ ${formatPrecise(d.duration)}</div>
         <div class="list-actions">
           <button class="row-btn" data-open-draft="${d.id}">開啟繼續剪輯</button>
-          ${d.finalBlob?`<button class="row-btn" data-download-draft="${d.id}">下載成品</button>`:""}
+          ${d.finalBlob?`<button class="row-btn" data-download-draft="${d.id}">⬇️ 儲存成品</button><button class="row-btn" data-share-draft="${d.id}">📤 分享成品</button>`:""}
         </div>
       </div>`).join(""):`<div class="panel-note">目前還沒有草稿。</div>`}
   `);
@@ -1391,7 +1483,10 @@ async function showDrafts(){
   document.getElementById("saveDraftNow").addEventListener("click",saveCurrentDraft);
   document.querySelectorAll("[data-open-draft]").forEach(b=>b.addEventListener("click",()=>loadDraft(b.dataset.openDraft)));
   document.querySelectorAll("[data-download-draft]").forEach(b=>b.addEventListener("click",async()=>{
-    const d=await dbGet("drafts",b.dataset.downloadDraft);if(d?.finalBlob)downloadBlob(d.finalBlob,d.name+".wav");
+    const d=await dbGet("drafts",b.dataset.downloadDraft);if(d?.finalBlob)await saveBlobToPhone(d.finalBlob,d.name+".wav");
+  }));
+  document.querySelectorAll("[data-share-draft]").forEach(b=>b.addEventListener("click",async()=>{
+    const d=await dbGet("drafts",b.dataset.shareDraft);if(d?.finalBlob)await shareBlobFile(d.finalBlob,d.name+".wav");
   }));
 }
 
@@ -1422,7 +1517,7 @@ async function loadDraft(id){
     const buffer=await audioContext.decodeAudioData((await a.blob.arrayBuffer()).slice(0));
     assets.set(a.id,{...a,buffer,duration:buffer.duration,peaks:createPeaks(buffer,6000)});
   }
-  clips=(d.clips||[]).map(c=>({...c}));beats=[...(d.beats||[])];selectedClipId=null;undoStack=[];redoStack=[];
+  clips=(d.clips||[]).map(c=>({...c}));beats=[...(d.beats||[])];selectedClipId=null;undoStack=[];redoStack=[];mutedTracks.clear();
   closeModal();normalizeTracks();renderAll();setPlayheadTime(0);showToast("📝 已開啟草稿，可繼續剪輯");
 }
 
@@ -1432,7 +1527,7 @@ async function loadDraft(id){
 async function showProducts(){
   const list=(await dbGetAll("products")).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
   openModal("🎵 成品",`
-    <div class="panel-note">成品保存在目前這支手機的這個瀏覽器。可以試聽、改檔名、下載；不提供刪除。</div>
+    <div class="panel-note">成品保存在目前這支手機的這個瀏覽器。可以試聽、改檔名、儲存到手機或直接分享 WAV 音檔；不提供刪除。</div>
     ${list.length?list.map(p=>{
       const url=URL.createObjectURL(p.blob);
       return `<div class="list-row">
@@ -1441,14 +1536,18 @@ async function showProducts(){
         <audio controls src="${url}"></audio>
         <div class="list-actions">
           <button class="row-btn" data-rename-product="${p.id}">✏️ 改檔名</button>
-          <button class="row-btn" data-download-product="${p.id}">⬇️ 下載</button>
+          <button class="row-btn" data-download-product="${p.id}">⬇️ 儲存</button>
+          <button class="row-btn" data-share-product="${p.id}">📤 分享</button>
         </div>
       </div>`;
     }).join(""):`<div class="panel-note">目前還沒有成品。</div>`}
   `);
 
   document.querySelectorAll("[data-download-product]").forEach(b=>b.addEventListener("click",async()=>{
-    const p=await dbGet("products",b.dataset.downloadProduct);if(p)downloadBlob(p.blob,p.name+".wav");
+    const p=await dbGet("products",b.dataset.downloadProduct);if(p)await saveBlobToPhone(p.blob,p.name+".wav");
+  }));
+  document.querySelectorAll("[data-share-product]").forEach(b=>b.addEventListener("click",async()=>{
+    const p=await dbGet("products",b.dataset.shareProduct);if(p)await shareBlobFile(p.blob,p.name+".wav");
   }));
   document.querySelectorAll("[data-rename-product]").forEach(b=>b.addEventListener("click",async()=>{
     const p=await dbGet("products",b.dataset.renameProduct);if(!p)return;
@@ -1491,12 +1590,16 @@ async function dbGet(store,id){
 /* =========================================================
    Modal / Toast / Utils
    ========================================================= */
+function stopModalAudio(){
+  document.querySelectorAll("#modalBody audio").forEach(a=>{try{a.pause()}catch{}});
+}
 function openModal(title,html){
+  stopModalAudio();
   document.getElementById("modalTitle").textContent=title;
   document.getElementById("modalBody").innerHTML=html;
   document.getElementById("modalBackdrop").classList.add("show");
 }
-function closeModal(){document.getElementById("modalBackdrop").classList.remove("show")}
+function closeModal(){stopModalAudio();document.getElementById("modalBackdrop").classList.remove("show")}
 document.getElementById("modalClose").addEventListener("click",closeModal);
 document.getElementById("modalBackdrop").addEventListener("click",e=>{if(e.target.id==="modalBackdrop")closeModal()});
 
@@ -1507,12 +1610,103 @@ function showToast(text){
 function uid(prefix="id"){return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`}
 function escapeHtml(t){return String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
 function formatTime(sec){sec=Math.max(0,sec||0);const m=Math.floor(sec/60),s=Math.floor(sec%60);return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`}
-function formatPrecise(sec){sec=Math.max(0,sec||0);const m=Math.floor(sec/60),s=(sec%60).toFixed(1).padStart(4,"0");return `${String(m).padStart(2,"0")}:${s}`}
+function formatPrecise(sec){sec=Math.max(0,sec||0);const tenths=Math.round(sec*10),m=Math.floor(tenths/600),s=(tenths%600)/10;return `${String(m).padStart(2,"0")}:${s.toFixed(1).padStart(4,"0")}`}
 function makeDefaultName(){
   const d=new Date();return `自由品勢作品_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;
 }
-function downloadBlob(blob,name){
-  const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2500);
+function cleanFileName(name){
+  const n=String(name||"自由品勢成品.wav").replace(/[\/:*?"<>|]/g,"_").trim();
+  return /\.wav$/i.test(n)?n:n+".wav";
+}
+
+function makeAudioFile(blob,name){
+  return new File([blob],cleanFileName(name),{type:"audio/wav",lastModified:Date.now()});
+}
+
+function isEmbeddedMobileBrowser(){
+  const ua=navigator.userAgent||"";
+  return /;\s*wv\)|\bwv\b|FBAN|FBAV|Instagram|Line\/|MicroMessenger|GSA\//i.test(ua);
+}
+
+function canShareFile(file){
+  try{
+    if(!navigator.share)return false;
+    return !navigator.canShare || navigator.canShare({files:[file]});
+  }catch{return false}
+}
+
+async function shareBlobFile(blob,name){
+  const file=makeAudioFile(blob,name);
+  if(canShareFile(file)){
+    try{
+      await navigator.share({title:file.name,text:"自由品勢音樂成品",files:[file]});
+      showToast("📤 已開啟手機分享");
+      return true;
+    }catch(e){
+      if(e?.name==="AbortError")return false;
+      console.warn("分享失敗",e);
+    }
+  }
+  showToast("⚠️ 這個瀏覽器不支援直接分享，改用儲存");
+  return directDownloadBlob(blob,file.name);
+}
+
+async function saveBlobToPhone(blob,name){
+  const fileName=cleanFileName(name);
+
+  // 支援 File System Access API 的瀏覽器：直接叫出系統儲存位置選擇器
+  if(window.showSaveFilePicker){
+    try{
+      const handle=await window.showSaveFilePicker({
+        suggestedName:fileName,
+        types:[{description:"WAV 音訊",accept:{"audio/wav":[".wav"]}}]
+      });
+      const writable=await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      showToast("✅ 已儲存到手機");
+      return true;
+    }catch(e){
+      if(e?.name==="AbortError")return false;
+      console.warn("系統儲存失敗",e);
+    }
+  }
+
+  // Android App 內建瀏覽器常會封鎖 blob 下載；直接改用系統分享/儲存面板
+  const file=makeAudioFile(blob,fileName);
+  if(isEmbeddedMobileBrowser() && canShareFile(file)){
+    try{
+      await navigator.share({title:file.name,text:"請選擇『檔案／儲存到裝置』來保存音檔",files:[file]});
+      showToast("✅ 已開啟手機儲存／分享介面");
+      return true;
+    }catch(e){
+      if(e?.name==="AbortError")return false;
+      console.warn("內建瀏覽器分享儲存失敗",e);
+    }
+  }
+
+  return directDownloadBlob(blob,fileName);
+}
+
+function directDownloadBlob(blob,name){
+  try{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download=cleanFileName(name);
+    a.rel="noopener";
+    a.style.display="none";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),10000);
+    showToast("⬇️ 已送出下載；請到手機『下載』或『檔案』查看");
+    return true;
+  }catch(e){
+    console.error(e);
+    showToast("⚠️ 目前瀏覽器無法儲存，請改按『📤 分享』");
+    return false;
+  }
 }
 
 /* =========================================================
